@@ -1,7 +1,9 @@
 package storagecore;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import storagecore.enums.IConfigItem;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -9,10 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class StorageCore {
+    private String oldRoot;
     private String root;
-    private int maxSizeLimit;
-    private List<String> bannedExtensions;
-    private int fileCountLimit;
+    private final int maxSizeLimit;
+    private final List<String> bannedExtensions;
+    private final int fileCountLimit;
 
     /**
      * Create a storage with default settings
@@ -39,23 +42,26 @@ public abstract class StorageCore {
         this.fileCountLimit = fileCountLimit;
     }
 
+    public String getOldRoot() {
+        return oldRoot;
+    }
+
+    public String getRoot() {
+        return root;
+    }
+
+    public void setRoot(String root) {
+        oldRoot = this.root;
+        this.root = root;
+    }
+
     /**
      * Get the maximum size limit of an uploaded file
      *
      * @return The limit in bytes
      */
     public int getMaxSizeLimit() {
-        return (Integer) readConfig("max_size_limit");
-    }
-
-    /**
-     * Set the maximum size limit of an uploaded file
-     *
-     * @param maxSizeLimit Amount of bytes the limit will be
-     */
-    public void setMaxSizeLimit(byte maxSizeLimit) {
-        this.maxSizeLimit = maxSizeLimit;
-        updateConfig();
+        return (Integer) readConfig(IConfigItem.MAX_SIZE_LIMIT);
     }
 
     /**
@@ -64,39 +70,7 @@ public abstract class StorageCore {
      * @return An ArrayList of banned extensions
      */
     public List<String> getBannedExtensions() {
-        return (List<String>) readConfig("banned_extensions");
-    }
-
-    /**
-     * Set the list of banned extensions
-     *
-     * @param bannedExtensions The full list of banned extensions
-     */
-    public void setBannedExtensions(List<String> bannedExtensions) {
-        this.bannedExtensions = bannedExtensions;
-        updateConfig();
-    }
-
-    /**
-     * Add a single extension to the banned list
-     *
-     * @param extension An extension
-     */
-    public void addBannedExtension(String extension) {
-        if (!bannedExtensions.contains(extension)) {
-            this.bannedExtensions.add(extension);
-        }
-        updateConfig();
-    }
-
-    /**
-     * Remove a single extension from the banned list
-     *
-     * @param extension An extension
-     */
-    public void removeBannedExtension(String extension) {
-        bannedExtensions.remove(extension);
-        updateConfig();
+        return (List<String>) readConfig(IConfigItem.BANNED_EXTENSIONS);
     }
 
     /**
@@ -105,17 +79,7 @@ public abstract class StorageCore {
      * @return The amount of files as an integer
      */
     public int getFileCountLimit() {
-        return (Integer) readConfig("file_count_limit");
-    }
-
-    /**
-     * Set the maximum amount of files that can be in a directory
-     *
-     * @param fileCountLimit The amount of files
-     */
-    public void setFileCountLimit(int fileCountLimit) {
-        this.fileCountLimit = fileCountLimit;
-        updateConfig();
+        return (Integer) readConfig(IConfigItem.FILE_COUNT_LIMIT);
     }
 
     private void updateConfig() {
@@ -123,7 +87,11 @@ public abstract class StorageCore {
             FileWriter fileWriter = new FileWriter("config.json");
             JSONObject json = new JSONObject();
             json.put("max_size_limit", maxSizeLimit);
-            json.put("banned_extensions", bannedExtensions.toArray());
+            JSONArray jsonArray = new JSONArray();
+            for (String extension : bannedExtensions) {
+                jsonArray.add(extension);
+            }
+            json.put("banned_extensions", jsonArray);
             json.put("file_count_limit", fileCountLimit);
             fileWriter.write(json.toString());
             fileWriter.close();
@@ -132,16 +100,38 @@ public abstract class StorageCore {
         }
     }
 
-    private Object readConfig(String item) {
+    private Object readConfig(IConfigItem configItem) {
         try {
             JSONParser jsonParser = new JSONParser();
             JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
-            return json.get(item);
+            switch (configItem) {
+                case BANNED_EXTENSIONS -> {
+                    return json.get("banned_extensions");
+                }
+                case FILE_COUNT_LIMIT -> {
+                    return json.get("file_count_limit");
+                }
+                case MAX_SIZE_LIMIT -> {
+                    return json.get("max_size_limit");
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
+
+    /**
+     * Enter a specified directory
+     *
+     * @param name The name of the directory
+     */
+    public abstract void enterDirectory(String name);
+
+    /**
+     * Return to the previous directory
+     */
+    public abstract void returnBackFromDirectory();
 
     /**
      * Create a directory in the current directory
