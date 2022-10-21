@@ -9,5 +9,8 @@
         <module name="StorageCore" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="StorageCore" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>
