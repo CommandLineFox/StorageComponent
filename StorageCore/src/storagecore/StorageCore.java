@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.List;
 
 public abstract class StorageCore {
-    private String oldRoot;
     private String root;
     private final int maxSizeLimit;
     private final List<String> bannedExtensions;
@@ -43,16 +42,21 @@ public abstract class StorageCore {
         this.fileCountLimit = fileCountLimit;
     }
 
-    public String getOldRoot() {
-        return oldRoot;
-    }
-
+    /**
+     * Get the current root position
+     *
+     * @return The current root position
+     */
     public String getRoot() {
         return root;
     }
 
+    /**
+     * Set the current root position
+     *
+     * @param root The new root position
+     */
     public void setRoot(String root) {
-        oldRoot = this.root;
         this.root = root;
     }
 
