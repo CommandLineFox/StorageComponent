@@ -8,6 +8,7 @@ import storagecore.enums.IConfigItem;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public abstract class StorageCore {
@@ -196,9 +197,23 @@ public abstract class StorageCore {
     public abstract void renameFileOrDirectory(String name, String newName);
 
     /**
-     * Search a file or directory by it's name in the current directory
+     * Search a file or directory by its name in the current directory
      *
      * @param name The name of the file or directory
      */
-    public abstract void search(String name);
+    public abstract void searchByName(String name);
+
+    /**
+     * Search a file by its extension in the current directory
+     *
+     * @param extension The extension to filter by
+     */
+    public abstract void searchByExtension(String extension);
+
+    /**
+     * Search a file or directory by its last modified date being younger than provided date in the current directory
+     *
+     * @param date The maximum date the results can be old
+     */
+    public abstract void searchByModifiedAfter(Date date);
 }
