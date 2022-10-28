@@ -1,9 +1,9 @@
 package storagecore;
 
+import storagecore.enums.IConfigItem;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import storagecore.enums.IConfigItem;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -93,9 +93,7 @@ public abstract class StorageCore {
             JSONObject json = new JSONObject();
             json.put("max_size_limit", maxSizeLimit);
             JSONArray jsonArray = new JSONArray();
-            for (String extension : bannedExtensions) {
-                jsonArray.add(extension);
-            }
+            jsonArray.addAll(bannedExtensions);
             json.put("banned_extensions", jsonArray);
             json.put("file_count_limit", fileCountLimit);
             fileWriter.write(json.toString());
