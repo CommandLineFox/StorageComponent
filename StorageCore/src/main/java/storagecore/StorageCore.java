@@ -22,8 +22,11 @@ public abstract class StorageCore {
      * Max size limit - 127
      * Banned extensions - none
      * File count limit - 20
+     *
+     * @param root The root position of the remote storage
      */
-    public StorageCore() {
+    public StorageCore(String root) {
+        this.root = root;
         maxSizeLimit = 127;
         bannedExtensions = new ArrayList<>();
         fileCountLimit = 20;
@@ -32,11 +35,13 @@ public abstract class StorageCore {
     /**
      * Create a storage with custom settings
      *
+     * @param root             The root position of the remote storage
      * @param maxSizeLimit     The max size limit of an uploaded file
      * @param bannedExtensions The list of banned extensions that can't be uploaded
      * @param fileCountLimit   The maximum amount of files in a directory
      */
-    public StorageCore(byte maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+    public StorageCore(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+        this.root = root;
         this.maxSizeLimit = maxSizeLimit;
         this.bannedExtensions = bannedExtensions;
         this.fileCountLimit = fileCountLimit;

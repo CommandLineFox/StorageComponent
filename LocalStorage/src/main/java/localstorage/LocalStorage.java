@@ -3,8 +3,17 @@ package localstorage;
 import storagecore.StorageCore;
 
 import java.util.Date;
+import java.util.List;
 
 public class LocalStorage extends StorageCore {
+    public LocalStorage(String root) {
+        super(root);
+    }
+
+    public LocalStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+        super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
+    }
+
     @Override
     public void enterDirectory(String s) {
 

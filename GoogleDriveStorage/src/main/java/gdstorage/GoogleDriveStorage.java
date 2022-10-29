@@ -3,8 +3,17 @@ package gdstorage;
 import storagecore.StorageCore;
 
 import java.util.Date;
+import java.util.List;
 
 public class GoogleDriveStorage extends StorageCore {
+    public GoogleDriveStorage(String root) {
+        super(root);
+    }
+
+    public GoogleDriveStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+        super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
+    }
+
     @Override
     public void enterDirectory(String s) {
 
