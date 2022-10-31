@@ -2,6 +2,7 @@ package localstorage;
 
 import storagecore.StorageCore;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 
@@ -16,12 +17,18 @@ public class LocalStorage extends StorageCore {
 
     @Override
     public void enterDirectory(String s) {
-
+        String path = getRoot() + "/" + s;
+        File f = new File(path);
+        if (f.exists() && f.isDirectory()) {
+            setRoot(path);
+            System.out.println("Root has been set to " + path);
+        }
     }
 
     @Override
     public void returnBackFromDirectory() {
-
+        String path = getRoot().substring(getRoot().lastIndexOf('/'));
+        setRoot(path);
     }
 
     @Override
