@@ -1,12 +1,14 @@
 package storagecore;
 
-import storagecore.enums.IConfigItem;
+import storagecore.enums.ConfigItem;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -45,6 +47,7 @@ public abstract class StorageCore {
         this.maxSizeLimit = maxSizeLimit;
         this.bannedExtensions = bannedExtensions;
         this.fileCountLimit = fileCountLimit;
+        updateConfig();
     }
 
     /**
@@ -71,7 +74,7 @@ public abstract class StorageCore {
      * @return The limit in bytes
      */
     public int getMaxSizeLimit() {
-        return (Integer) readConfig(IConfigItem.MAX_SIZE_LIMIT);
+        return (Integer) readConfig(ConfigItem.MAX_SIZE_LIMIT);
     }
 
     /**
@@ -80,7 +83,7 @@ public abstract class StorageCore {
      * @return An ArrayList of banned extensions
      */
     public List<String> getBannedExtensions() {
-        return (List<String>) readConfig(IConfigItem.BANNED_EXTENSIONS);
+        return (List<String>) readConfig(ConfigItem.BANNED_EXTENSIONS);
     }
 
     /**
@@ -89,7 +92,7 @@ public abstract class StorageCore {
      * @return The amount of files as an integer
      */
     public int getFileCountLimit() {
-        return (Integer) readConfig(IConfigItem.FILE_COUNT_LIMIT);
+        return (Integer) readConfig(ConfigItem.FILE_COUNT_LIMIT);
     }
 
     private void updateConfig() {
@@ -108,7 +111,7 @@ public abstract class StorageCore {
         }
     }
 
-    private Object readConfig(IConfigItem configItem) {
+    private Object readConfig(ConfigItem configItem) {
         try {
             JSONParser jsonParser = new JSONParser();
             JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
@@ -146,7 +149,7 @@ public abstract class StorageCore {
      *
      * @param name The name of the directory
      */
-    public abstract void createDirectory(String name);
+    public abstract void createDirectory(String name) throws FileAlreadyExistsException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
@@ -154,7 +157,7 @@ public abstract class StorageCore {
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
      */
-    public abstract void createDirectory(int start, int end);
+    public abstract void createDirectory(int start, int end) throws FileAlreadyExistsException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -163,21 +166,21 @@ public abstract class StorageCore {
      * @param start The bottom number
      * @param end   The top number
      */
-    public abstract void createDirectory(String name, int start, int end);
+    public abstract void createDirectory(String name, int start, int end) throws FileAlreadyExistsException;
 
     /**
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
      */
-    public abstract void addFile(String file);
+    public abstract void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * Delete a file or directory at a given path
      *
      * @param name The name of the file or directory
      */
-    public abstract void deleteFileOrFolder(String name);
+    public abstract void deleteFileOrFolder(String name) throws FileNotFoundException;
 
     /**
      * Move a file from current directory to a new path
@@ -185,7 +188,7 @@ public abstract class StorageCore {
      * @param name The name of the file to move
      * @param path The relative path where the file will be moved to
      */
-    public abstract void moveFileOrDirectory(String name, String path);
+    public abstract void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * Download a file or directory from current directory
@@ -193,7 +196,7 @@ public abstract class StorageCore {
      * @param name The name of the file to download
      * @param path The path to place the file in
      */
-    public abstract void downloadFileOrDirectory(String name, String path);
+    public abstract void downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * Rename a file or directory in the current directory
@@ -201,7 +204,7 @@ public abstract class StorageCore {
      * @param name    The name of the file to rename
      * @param newName The new name
      */
-    public abstract void renameFileOrDirectory(String name, String newName);
+    public abstract void renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * Search a file or directory by its name in the current directory

@@ -1,6 +1,6 @@
 package storagecore.enums;
 
-public enum IConfigItem {
+public enum ConfigItem {
     BANNED_EXTENSIONS,
     FILE_COUNT_LIMIT,
     MAX_SIZE_LIMIT
