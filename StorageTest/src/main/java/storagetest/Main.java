@@ -4,7 +4,9 @@ import gdstorage.GoogleDriveStorage;
 import localstorage.LocalStorage;
 import storagecore.StorageCore;
 
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.nio.file.FileAlreadyExistsException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -63,15 +65,30 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==2)//Create imefajla
                 {
-                            storageCore.createDirectory(niz.get(1));
+                    try {
+                        storageCore.createDirectory(niz.get(1));
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
                 else if(niz.size()==3)//Create 1 20
                 {
-                    storageCore.createDirectory(Integer.parseInt(niz.get(1)),Integer.parseInt(niz.get(2)));
+                    try {
+                        storageCore.createDirectory(Integer.parseInt(niz.get(1)),Integer.parseInt(niz.get(2)));
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
                 else  if(niz.size()==4)//Create 1 20 imefajla
                 {
-                    storageCore.createDirectory(niz.get(1),Integer.parseInt(niz.get(2)),Integer.parseInt(niz.get(1)));
+                    try {
+                        storageCore.createDirectory(niz.get(1),Integer.parseInt(niz.get(2)),Integer.parseInt(niz.get(1)));
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
 
             }
@@ -80,7 +97,15 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==2)
                 {
-                    storageCore.addFile(niz.get(1));
+                    try {
+                        storageCore.addFile(niz.get(1));
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Invalid path");
+                        e.printStackTrace();
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
             }
             else  if(input.split(" ")[0].split(" ")[0].equalsIgnoreCase("delete"))
@@ -88,7 +113,12 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==2)
                 {
-                    storageCore.deleteFileOrFolder(niz.get(1));
+                    try {
+                        storageCore.deleteFileOrFolder(niz.get(1));
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Invalid file name");
+                        e.printStackTrace();
+                    }
                 }
             }
             else if(input.split(" ")[0].equalsIgnoreCase("move"))
@@ -96,7 +126,15 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==3)
                 {
-                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    try {
+                        storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Invalid path");
+                        e.printStackTrace();
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
 
             }
@@ -105,7 +143,15 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==3)
                 {
-                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    try {
+                        storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Invalid path");
+                        e.printStackTrace();
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
             }
             else if(input.equalsIgnoreCase("rename"))
@@ -113,7 +159,15 @@ public class Main {
                 List<String> niz= List.of(input.split(" "));
                 if(niz.size()==3)
                 {
-                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    try {
+                        storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                    } catch (FileNotFoundException e) {
+                        System.out.println("Invalid path");
+                        e.printStackTrace();
+                    } catch (FileAlreadyExistsException e) {
+                        System.out.println("File already exists");
+                        e.printStackTrace();
+                    }
                 }
             }
             else if(input.split(" ")[0].equalsIgnoreCase("searchByName"))
