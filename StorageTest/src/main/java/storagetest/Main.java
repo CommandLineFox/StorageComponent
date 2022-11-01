@@ -5,6 +5,8 @@ import localstorage.LocalStorage;
 import storagecore.StorageCore;
 
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Scanner;
 
@@ -12,7 +14,7 @@ public class Main {
     public static void main(String[] args) {
 
 
-
+        StorageCore storageCore=new LocalStorage("def");//Stavljeno kao default storage
         System.out.println("Welcome, to storage");
         System.out.println("To create local storage input 1,to create google drive storage input 2");
         String input="";
@@ -41,19 +43,107 @@ public class Main {
                 List<String> bannedextensions = List.of(s.nextLine().split(" "));
 
 
-                System.out.println("Enter file count limit:");//                                                        Mandatory
+                System.out.println("Enter file count limit:");//                                                        Optional
                 int filecount = Integer.parseInt(s.nextLine());
 
                 if(input.equals("1"))
                 {
-                    StorageCore storageCore =new LocalStorage(directory,maxbytes,bannedextensions,filecount);
+                    storageCore =new LocalStorage(directory,maxbytes,bannedextensions,filecount);
                 }
                 else
                 {
-                    StorageCore storageCore =new GoogleDriveStorage(directory,maxbytes,bannedextensions,filecount);
+                    storageCore =new GoogleDriveStorage(directory,maxbytes,bannedextensions,filecount);
                 }
             }
 
+            //Create directory
+            else if(input.split(" ")[0].equalsIgnoreCase("create"))
+            {
+
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)//Create imefajla
+                {
+                            storageCore.createDirectory(niz.get(1));
+                }
+                else if(niz.size()==3)//Create 1 20
+                {
+                    storageCore.createDirectory(Integer.parseInt(niz.get(1)),Integer.parseInt(niz.get(2)));
+                }
+                else  if(niz.size()==4)//Create 1 20 imefajla
+                {
+                    storageCore.createDirectory(niz.get(1),Integer.parseInt(niz.get(2)),Integer.parseInt(niz.get(1)));
+                }
+
+            }
+            else if(input.split(" ")[0].split(" ")[0].equalsIgnoreCase("addfile"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)
+                {
+                    storageCore.addFile(niz.get(1));
+                }
+            }
+            else  if(input.split(" ")[0].split(" ")[0].equalsIgnoreCase("delete"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)
+                {
+                    storageCore.deleteFileOrFolder(niz.get(1));
+                }
+            }
+            else if(input.split(" ")[0].equalsIgnoreCase("move"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==3)
+                {
+                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                }
+
+            }
+            else if(input.split(" ")[0].equalsIgnoreCase("download"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==3)
+                {
+                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                }
+            }
+            else if(input.equalsIgnoreCase("rename"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==3)
+                {
+                    storageCore.moveFileOrDirectory(niz.get(1),niz.get(2));
+                }
+            }
+            else if(input.split(" ")[0].equalsIgnoreCase("searchByName"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)
+                {
+                    storageCore.searchByName(niz.get(1));
+                }
+            }
+            else if(input.split(" ")[0].equalsIgnoreCase("searchByExtension"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)
+                {
+                    storageCore.searchByExtension(niz.get(1));
+                }
+            }
+            else if(input.split(" ")[0].equalsIgnoreCase("searchByModifiedAfter"))
+            {
+                List<String> niz= List.of(input.split(" "));
+                if(niz.size()==2)
+                {
+                    try {
+                        storageCore.searchByModifiedAfter(new SimpleDateFormat("dd/MM/yyyy").parse(niz.get(1)));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
             else if(input.equalsIgnoreCase("help"))
             {
                 System.out.println("Spisak komandi kako se koristi apk");
