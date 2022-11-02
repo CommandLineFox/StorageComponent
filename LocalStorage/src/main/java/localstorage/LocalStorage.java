@@ -5,6 +5,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import storagecore.StorageCore;
 import storagecore.enums.ConfigItem;
+import storagecore.exceptions.BannedExtensionUploadException;
+import storagecore.exceptions.FileCountLimitReachedException;
+import storagecore.exceptions.MaxSizeLimitBreachedException;
 
 import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
@@ -22,15 +25,15 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    protected void updateConfig() {
+    protected void updateConfig(int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
         try {
             FileWriter fileWriter = new FileWriter(getRoot() + "\\config.json");
             JSONObject json = new JSONObject();
-            json.put("max_size_limit", getMaxSizeLimit());
+            json.put("max_size_limit", maxSizeLimit);
             JSONArray jsonArray = new JSONArray();
-            jsonArray.addAll(getBannedExtensions());
+            jsonArray.addAll(bannedExtensions);
             json.put("banned_extensions", jsonArray);
-            json.put("file_count_limit", getFileCountLimit());
+            json.put("file_count_limit", fileCountLimit);
             fileWriter.write(json.toString());
             fileWriter.close();
         } catch (Exception e) {
@@ -77,7 +80,12 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    public void createDirectory(String name) throws FileAlreadyExistsException {
+    public void createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException {
+        int amount = new File(getRoot()).list().length;
+        if (amount == getFileCountLimit()) {
+            throw new FileCountLimitReachedException();
+        }
+
         File file = new File(getRoot(), name);
         if (file.exists()) {
             throw new FileAlreadyExistsException("Provided directory " + name + " already exists.");
@@ -92,7 +100,9 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    public void createDirectory(int start, int end) throws FileAlreadyExistsException {
+    public void createDirectory(int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
+        checkFileCount(getRoot());
+
         for (int i = start; i <= end; i++) {
             String name = String.valueOf(i);
             createDirectory(name);
@@ -100,14 +110,16 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    public void createDirectory(String name, int start, int end) throws FileAlreadyExistsException {
+    public void createDirectory(String name, int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
+        checkFileCount(getRoot());
+
         for (int i = start; i <= end; i++) {
             createDirectory(name + i);
         }
     }
 
     @Override
-    public void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException {
+    public void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException {
         File original = new File(file);
         String name = file.substring(file.lastIndexOf("\\") + 1);
         File root = new File(getRoot(), name);
@@ -119,6 +131,10 @@ public class LocalStorage extends StorageCore {
         if (root.exists()) {
             throw new FileAlreadyExistsException("The file already exists in the destination");
         }
+
+        checkFileCount(root.toPath().toString());
+        checkBannedExtension(original.getName());
+        checkMaxSizeLimimt(original);
 
         try {
             Files.copy(original.toPath(), root.toPath());
@@ -143,7 +159,7 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    public void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException {
+    public void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
         File original = new File(getRoot(), name);
         File root = new File(path, name);
 
@@ -154,6 +170,8 @@ public class LocalStorage extends StorageCore {
         if (root.exists()) {
             throw new FileAlreadyExistsException("The file already exists in the destination");
         }
+
+        checkFileCount(root.toPath().toString());
 
         try {
             Files.move(original.toPath(), root.toPath());
@@ -201,5 +219,53 @@ public class LocalStorage extends StorageCore {
     @Override
     public void searchByModifiedAfter(Date date) {
 
+    }
+
+    private void checkFileCount(String file) throws FileNotFoundException, FileCountLimitReachedException {
+        File root = new File(file);
+        if (!root.exists()) {
+            throw new FileNotFoundException("Couldn't find the root");
+        }
+
+        int amount = root.list().length;
+        if (amount == getFileCountLimit()) {
+            throw new FileCountLimitReachedException();
+        }
+    }
+
+    private void checkBannedExtension(String name) throws BannedExtensionUploadException {
+        String extension = name.substring(name.lastIndexOf("." + 1)).trim();
+        if (getBannedExtensions().contains(extension)) {
+            throw new BannedExtensionUploadException();
+        }
+    }
+
+    private void checkMaxSizeLimimt(File file) throws FileNotFoundException, MaxSizeLimitBreachedException {
+        File root = new File(getRoot());
+        if (!root.exists()) {
+            throw new FileNotFoundException("Couldn't find the root");
+        }
+
+        if (getFolderSize(root) + file.length() > getMaxSizeLimit()) {
+            throw new MaxSizeLimitBreachedException();
+        }
+    }
+
+    private int getFolderSize(File root) {
+        int length = 0;
+        File[] files = root.listFiles();
+        if (files != null) {
+            int count = files.length;
+
+            for (File file : files) {
+                if (file.isFile()) {
+                    length += file.length();
+                } else {
+                    length += getFolderSize(file);
+                }
+            }
+        }
+
+        return length;
     }
 }

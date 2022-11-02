@@ -105,7 +105,7 @@ public abstract class StorageCore {
      *
      * @param name The name of the directory
      */
-    public abstract void createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(String name) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
@@ -113,7 +113,7 @@ public abstract class StorageCore {
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
      */
-    public abstract void createDirectory(int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -122,7 +122,7 @@ public abstract class StorageCore {
      * @param start The bottom number
      * @param end   The top number
      */
-    public abstract void createDirectory(String name, int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(String name, int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Move a given file to the storage
