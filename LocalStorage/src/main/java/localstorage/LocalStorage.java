@@ -1,13 +1,14 @@
 package localstorage;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import storagecore.StorageCore;
+import storagecore.enums.ConfigItem;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.Date;
 import java.util.List;
 
@@ -18,6 +19,45 @@ public class LocalStorage extends StorageCore {
 
     public LocalStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
         super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
+    }
+
+    @Override
+    protected void updateConfig() {
+        try {
+            FileWriter fileWriter = new FileWriter(getRoot() + "\\config.json");
+            JSONObject json = new JSONObject();
+            json.put("max_size_limit", getMaxSizeLimit());
+            JSONArray jsonArray = new JSONArray();
+            jsonArray.addAll(getBannedExtensions());
+            json.put("banned_extensions", jsonArray);
+            json.put("file_count_limit", getFileCountLimit());
+            fileWriter.write(json.toString());
+            fileWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected Object readConfig(ConfigItem configItem) {
+        try {
+            JSONParser jsonParser = new JSONParser();
+            JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
+            switch (configItem) {
+                case BANNED_EXTENSIONS -> {
+                    return json.get("banned_extensions");
+                }
+                case FILE_COUNT_LIMIT -> {
+                    return json.get("file_count_limit");
+                }
+                case MAX_SIZE_LIMIT -> {
+                    return json.get("max_size_limit");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @Override

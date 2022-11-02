@@ -95,42 +95,9 @@ public abstract class StorageCore {
         return (Integer) readConfig(ConfigItem.FILE_COUNT_LIMIT);
     }
 
-    private void updateConfig() {
-        try {
-            FileWriter fileWriter = new FileWriter("config.json");
-            JSONObject json = new JSONObject();
-            json.put("max_size_limit", maxSizeLimit);
-            JSONArray jsonArray = new JSONArray();
-            jsonArray.addAll(bannedExtensions);
-            json.put("banned_extensions", jsonArray);
-            json.put("file_count_limit", fileCountLimit);
-            fileWriter.write(json.toString());
-            fileWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    protected abstract void updateConfig();
 
-    private Object readConfig(ConfigItem configItem) {
-        try {
-            JSONParser jsonParser = new JSONParser();
-            JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
-            switch (configItem) {
-                case BANNED_EXTENSIONS -> {
-                    return json.get("banned_extensions");
-                }
-                case FILE_COUNT_LIMIT -> {
-                    return json.get("file_count_limit");
-                }
-                case MAX_SIZE_LIMIT -> {
-                    return json.get("max_size_limit");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    protected abstract Object readConfig(ConfigItem configItem);
 
     /**
      * Enter a specified directory
