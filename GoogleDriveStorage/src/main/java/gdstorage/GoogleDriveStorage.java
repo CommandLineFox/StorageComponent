@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -26,6 +27,29 @@ import com.google.api.services.drive.model.FileList;
 import storagecore.StorageCore;
 import storagecore.enums.ConfigItem;
 
+
+
+import com.google.api.client.auth.oauth2.Credential;
+import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
+import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
+import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
+import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.FileContent;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.store.FileDataStoreFactory;
+import com.google.api.services.drive.Drive;
+import com.google.api.services.drive.DriveScopes;
+import com.google.api.services.drive.model.File;
+import com.google.api.services.drive.model.FileList;
+
+import java.io.*;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 public class GoogleDriveStorage extends StorageCore {
 
     /**
@@ -115,6 +139,8 @@ public class GoogleDriveStorage extends StorageCore {
                 .build();
     }
 
+
+    //Kod za pretragu
     public static void main(String[] args) throws IOException {
 
         Drive service = getDriveService();
@@ -147,15 +173,76 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public void createDirectory(String s) throws FileAlreadyExistsException {
 
+        File file = new File();
+        file.setName(s);
+        file.setMimeType("application/vnd.google-apps.folder");
+        file.setParents(Collections.singletonList(getRoot()));
+
+
+        try {
+            file = GoogleDriveStorage.getDriveService().files().create(file)
+                    .setFields("id,parents")
+                    .execute();
+            System.out.println("New Root ID: " + file.getId());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+       // setRoot(file.getId()); //POSTAVLJEN NOVI ROOT kretanje
+
+
+
     }
 
     @Override
     public void createDirectory(int i, int i1) throws FileAlreadyExistsException {
 
+
+        for(int b=i;b<=i1;b++)
+        {
+            File file = new File();
+            file.setName(String.valueOf(b));
+            file.setMimeType("application/vnd.google-apps.folder");
+            file.setParents(Collections.singletonList(getRoot()));
+
+
+            try {
+                file = GoogleDriveStorage.getDriveService().files().create(file)
+                        .setFields("id,parents")
+                        .execute();
+                System.out.println("New Root ID: " + file.getId());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+          //  setRoot(file.getId()); //POSTAVLJEN NOVI ROOT   kretanje
+
+        }
     }
 
     @Override
     public void createDirectory(String s, int i, int i1) throws FileAlreadyExistsException {
+
+        for(int b=i;b<=i1;b++)
+        {
+            File file = new File();
+            file.setName(s+" "+b);
+            file.setMimeType("application/vnd.google-apps.folder");
+            file.setParents(Collections.singletonList(getRoot()));
+
+
+            try {
+                file = GoogleDriveStorage.getDriveService().files().create(file)
+                        .setFields("id,parents")
+                        .execute();
+                System.out.println("New Root ID: " + file.getId());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //  setRoot(file.getId()); //POSTAVLJEN NOVI ROOT   kretanje
+
+        }
 
     }
 
