@@ -42,7 +42,7 @@ public class LocalStorage extends StorageCore {
     protected Object readConfig(ConfigItem configItem) {
         try {
             JSONParser jsonParser = new JSONParser();
-            JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
+            JSONObject json = (JSONObject) jsonParser.parse(new FileReader(getRoot() + "\\config.json"));
             switch (configItem) {
                 case BANNED_EXTENSIONS -> {
                     return json.get("banned_extensions");
@@ -72,7 +72,7 @@ public class LocalStorage extends StorageCore {
 
     @Override
     public void returnBackFromDirectory() {
-        String path = getRoot().substring(getRoot().lastIndexOf('/'));
+        String path = getRoot().substring(getRoot().lastIndexOf('\\'));
         setRoot(path);
     }
 
