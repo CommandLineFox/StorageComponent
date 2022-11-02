@@ -25,6 +25,7 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import storagecore.StorageCore;
+import storagecore.enums.ConfigItem;
 
 
 
@@ -90,6 +91,20 @@ public class GoogleDriveStorage extends StorageCore {
 
     public GoogleDriveStorage(String root) {
         super(root);
+    }
+
+    public GoogleDriveStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+        super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
+    }
+
+    @Override
+    protected void updateConfig() {
+
+    }
+
+    @Override
+    protected Object readConfig(ConfigItem configItem) {
+        return null;
     }
 
     /**

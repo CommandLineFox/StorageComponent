@@ -1,13 +1,10 @@
 package storagecore;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import storagecore.enums.ConfigItem;
+import storagecore.exceptions.FileCountLimitReachedException;
+import storagecore.exceptions.MaxSizeLimitBreachedException;
 
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -15,9 +12,6 @@ import java.util.List;
 
 public abstract class StorageCore {
     private String root;
-    private final int maxSizeLimit;
-    private final List<String> bannedExtensions;
-    private final int fileCountLimit;
 
     /**
      * Create a storage with default settings
@@ -29,9 +23,7 @@ public abstract class StorageCore {
      */
     public StorageCore(String root) {
         this.root = root;
-        maxSizeLimit = 127;
-        bannedExtensions = new ArrayList<>();
-        fileCountLimit = 20;
+        updateConfig(12000, new ArrayList<>(), 20);
     }
 
     /**
@@ -44,10 +36,7 @@ public abstract class StorageCore {
      */
     public StorageCore(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
         this.root = root;
-        this.maxSizeLimit = maxSizeLimit;
-        this.bannedExtensions = bannedExtensions;
-        this.fileCountLimit = fileCountLimit;
-        updateConfig();
+        updateConfig(maxSizeLimit, bannedExtensions, fileCountLimit);
     }
 
     /**
@@ -95,42 +84,9 @@ public abstract class StorageCore {
         return (Integer) readConfig(ConfigItem.FILE_COUNT_LIMIT);
     }
 
-    private void updateConfig() {
-        try {
-            FileWriter fileWriter = new FileWriter("config.json");
-            JSONObject json = new JSONObject();
-            json.put("max_size_limit", maxSizeLimit);
-            JSONArray jsonArray = new JSONArray();
-            jsonArray.addAll(bannedExtensions);
-            json.put("banned_extensions", jsonArray);
-            json.put("file_count_limit", fileCountLimit);
-            fileWriter.write(json.toString());
-            fileWriter.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+    protected abstract void updateConfig(int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit);
 
-    private Object readConfig(ConfigItem configItem) {
-        try {
-            JSONParser jsonParser = new JSONParser();
-            JSONObject json = (JSONObject) jsonParser.parse(new FileReader("config.json"));
-            switch (configItem) {
-                case BANNED_EXTENSIONS -> {
-                    return json.get("banned_extensions");
-                }
-                case FILE_COUNT_LIMIT -> {
-                    return json.get("file_count_limit");
-                }
-                case MAX_SIZE_LIMIT -> {
-                    return json.get("max_size_limit");
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    protected abstract Object readConfig(ConfigItem configItem);
 
     /**
      * Enter a specified directory
@@ -149,7 +105,7 @@ public abstract class StorageCore {
      *
      * @param name The name of the directory
      */
-    public abstract void createDirectory(String name) throws FileAlreadyExistsException;
+    public abstract void createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
@@ -157,7 +113,7 @@ public abstract class StorageCore {
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
      */
-    public abstract void createDirectory(int start, int end) throws FileAlreadyExistsException;
+    public abstract void createDirectory(int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -166,14 +122,14 @@ public abstract class StorageCore {
      * @param start The bottom number
      * @param end   The top number
      */
-    public abstract void createDirectory(String name, int start, int end) throws FileAlreadyExistsException;
+    public abstract void createDirectory(String name, int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
      */
-    public abstract void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException;
+    public abstract void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
 
     /**
      * Delete a file or directory at a given path
@@ -188,7 +144,7 @@ public abstract class StorageCore {
      * @param name The name of the file to move
      * @param path The relative path where the file will be moved to
      */
-    public abstract void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
+    public abstract void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Download a file or directory from current directory
