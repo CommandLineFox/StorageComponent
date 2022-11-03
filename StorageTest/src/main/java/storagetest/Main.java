@@ -42,6 +42,8 @@ public class Main {
                 int filecount = Integer.parseInt(s.nextLine());
 
                 if (input.equals("1")) {
+
+
                     storageCore = new LocalStorage(directory, maxbytes, bannedextensions, filecount);
                 } else {
                     storageCore = new GoogleDriveStorage(directory, maxbytes, bannedextensions, filecount);

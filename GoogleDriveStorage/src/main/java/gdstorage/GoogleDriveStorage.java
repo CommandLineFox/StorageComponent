@@ -17,6 +17,7 @@ import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
@@ -89,23 +90,12 @@ public class GoogleDriveStorage extends StorageCore {
         }
     }
 
-    public GoogleDriveStorage(String root) {
-        super(root);
-    }
+    public GoogleDriveStorage(String root) {super(root);}
 
     public GoogleDriveStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
         super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
     }
 
-    @Override
-    protected void updateConfig() {
-
-    }
-
-    @Override
-    protected Object readConfig(ConfigItem configItem) {
-        return null;
-    }
 
     /**
      * Creates an authorized Credential object.
@@ -145,7 +135,7 @@ public class GoogleDriveStorage extends StorageCore {
 
         Drive service = getDriveService();
 
-        FileList result = service.files().list()
+      /*  FileList result = service.files().list()
                 .setPageSize(10)
                 .setFields("nextPageToken, files(id, name)")
                 .execute();
@@ -157,7 +147,29 @@ public class GoogleDriveStorage extends StorageCore {
             for (File file : files) {
                 System.out.printf("%s (%s)\n", file.getName(), file.getId());
             }
+        }*/
+
+
+
+        try {
+            // File's metadata.
+            File fileMetadata = new File();
+            fileMetadata.setName("config.json");
+            fileMetadata.setParents(Collections.singletonList("appDataFolder"));
+            java.io.File filePath = new java.io.File("proba.json");
+            FileContent mediaContent = new FileContent("application/json", filePath);
+            File file = service.files().create(fileMetadata, mediaContent)
+                    .setFields("id")
+                    .execute();
+            System.out.println("File ID: " + file.getId());
+            //file.getId();
+        } catch (GoogleJsonResponseException e) {
+            // TODO(developer) - handle error appropriately
+            System.err.println("Unable to create file: " + e.getDetails());
+            throw e;
         }
+
+
     }
 
     @Override
