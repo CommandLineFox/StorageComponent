@@ -1,17 +1,21 @@
 package storagecore;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import storagecore.enums.ConfigItem;
+import storagecore.enums.FilterType;
+import storagecore.enums.OrderType;
+import storagecore.enums.SortType;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
 import java.io.FileNotFoundException;
 import java.nio.file.FileAlreadyExistsException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public abstract class StorageCore {
     private String root;
+    private Config config;
 
     /**
      * Create a storage with default settings
@@ -23,7 +27,16 @@ public abstract class StorageCore {
      */
     public StorageCore(String root) {
         this.root = root;
-        updateConfig(12000, new ArrayList<>(), 20);
+        if (checkConfig(root)) {
+            System.out.println("Storage already has a configuration");
+        } else {
+            System.out.println("Generating configuration for storage with default parameters");
+            this.config = new Config(16000000, new ArrayList<>());
+            updateConfig();
+            System.out.println("Successfully generated configuration for storage");
+        }
+
+        System.out.println("Storage started");
     }
 
     /**
@@ -32,12 +45,28 @@ public abstract class StorageCore {
      * @param root             The root position of the remote storage
      * @param maxSizeLimit     The max size limit of an uploaded file
      * @param bannedExtensions The list of banned extensions that can't be uploaded
-     * @param fileCountLimit   The maximum amount of files in a directory
      */
-    public StorageCore(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+    public StorageCore(String root, int maxSizeLimit, List<String> bannedExtensions) {
         this.root = root;
-        updateConfig(maxSizeLimit, bannedExtensions, fileCountLimit);
+        if (checkConfig(root)) {
+            System.out.println("Storage already has a configuration");
+        } else {
+            System.out.println("Generating configuration for storage with given parameters");
+            this.config = new Config(maxSizeLimit, bannedExtensions);
+            updateConfig();
+            System.out.println("Successfully generated configuration for storage");
+        }
+
+        System.out.println("Storage started");
     }
+
+    /**
+     * Check if a config.json file exists at the provided root
+     *
+     * @param root The path to the root of the storage
+     * @return If the config.json file exists or not
+     */
+    protected abstract boolean checkConfig(String root);
 
     /**
      * Get the current root position
@@ -80,13 +109,40 @@ public abstract class StorageCore {
      *
      * @return The amount of files as an integer
      */
-    public int getFileCountLimit() {
-        return (Integer) readConfig(ConfigItem.FILE_COUNT_LIMIT);
+    public HashMap getFileCountLimit() {
+        return (HashMap) readConfig(ConfigItem.FILE_COUNT_LIMITS);
     }
 
-    protected abstract void updateConfig(int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit);
+    protected abstract void updateConfig();
+
+    protected String setConfigJson() {
+        JSONObject json = new JSONObject();
+        json.put("max_size_limit", config.getMaxSizeLimit());
+        JSONArray jsonArray = new JSONArray();
+        jsonArray.addAll(config.getBannedExtensions());
+        json.put("banned_extensions", jsonArray);
+        json.put("file_count_limits", new JSONObject(config.getFileCountLimits()));
+        return json.toString();
+    }
 
     protected abstract Object readConfig(ConfigItem configItem);
+
+    protected Object getConfig(JSONObject json, ConfigItem configItem) {
+        switch (configItem) {
+            case BANNED_EXTENSIONS -> {
+                return json.get("banned_extensions");
+            }
+            case FILE_COUNT_LIMITS -> {
+                return json.get("file_count_limits");
+            }
+            case MAX_SIZE_LIMIT -> {
+                return json.get("max_size_limit");
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
 
     /**
      * Enter a specified directory
@@ -105,7 +161,17 @@ public abstract class StorageCore {
      *
      * @param name The name of the directory
      */
-    public abstract void createDirectory(String name) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(String name) throws
+            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+
+    /**
+     * Create a directory in the current directory with a file count limit
+     *
+     * @param name  The name of the directory
+     * @param limit The limit of files and directories
+     */
+    public abstract void createDirectory(String name, int limit) throws
+            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
@@ -113,7 +179,8 @@ public abstract class StorageCore {
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
      */
-    public abstract void createDirectory(int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(int start, int end) throws
+            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -122,14 +189,16 @@ public abstract class StorageCore {
      * @param start The bottom number
      * @param end   The top number
      */
-    public abstract void createDirectory(String name, int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract void createDirectory(String name, int start, int end) throws
+            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
      */
-    public abstract void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
+    public abstract void addFile(String file) throws
+            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
 
     /**
      * Delete a file or directory at a given path
@@ -167,19 +236,31 @@ public abstract class StorageCore {
      *
      * @param name The name of the file or directory
      */
-    public abstract void searchByName(String name);
+    public abstract List<String> searchByName(String name);
 
     /**
      * Search a file by its extension in the current directory
      *
      * @param extension The extension to filter by
      */
-    public abstract void searchByExtension(String extension);
+    public abstract List<String> searchByExtension(String extension);
 
     /**
      * Search a file or directory by its last modified date being younger than provided date in the current directory
      *
      * @param date The maximum date the results can be old
      */
-    public abstract void searchByModifiedAfter(Date date);
+    public abstract List<String> searchByModifiedAfter(Date date);
+
+    public abstract List<String> searchAllFromRoot();
+
+    public abstract List<String> searchAllFromRootWithoutRoot();
+
+    public abstract List<String> searchAll();
+
+    public abstract List<String> searchByPartOfName(String substring);
+
+    public abstract List<String> sortResults(List<String> result, SortType sortType, OrderType orderType);
+
+    public abstract List<String> filterResults(List<String> result, List<FilterType> filterType);
 }

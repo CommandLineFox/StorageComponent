@@ -25,16 +25,11 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    protected void updateConfig(int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
+    protected void updateConfig() {
         try {
             FileWriter fileWriter = new FileWriter(getRoot() + "\\config.json");
-            JSONObject json = new JSONObject();
-            json.put("max_size_limit", maxSizeLimit);
-            JSONArray jsonArray = new JSONArray();
-            jsonArray.addAll(bannedExtensions);
-            json.put("banned_extensions", jsonArray);
-            json.put("file_count_limit", fileCountLimit);
-            fileWriter.write(json.toString());
+            String json = setConfigJson();
+            fileWriter.write(json);
             fileWriter.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,17 +41,7 @@ public class LocalStorage extends StorageCore {
         try {
             JSONParser jsonParser = new JSONParser();
             JSONObject json = (JSONObject) jsonParser.parse(new FileReader(getRoot() + "\\config.json"));
-            switch (configItem) {
-                case BANNED_EXTENSIONS -> {
-                    return json.get("banned_extensions");
-                }
-                case FILE_COUNT_LIMIT -> {
-                    return json.get("file_count_limit");
-                }
-                case MAX_SIZE_LIMIT -> {
-                    return json.get("max_size_limit");
-                }
-            }
+            return getConfig(json, configItem);
         } catch (Exception e) {
             e.printStackTrace();
         }
