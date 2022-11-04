@@ -113,6 +113,9 @@ public abstract class StorageCore {
         return (HashMap) readConfig(ConfigItem.FILE_COUNT_LIMITS);
     }
 
+    /**
+     * Update the json file with new values
+     */
     protected abstract void updateConfig();
 
     protected String setConfigJson() {
@@ -125,6 +128,12 @@ public abstract class StorageCore {
         return json.toString();
     }
 
+    /**
+     * Get a specific item from the config
+     *
+     * @param configItem The item of choice
+     * @return The value of the item
+     */
     protected abstract Object readConfig(ConfigItem configItem);
 
     protected Object getConfig(JSONObject json, ConfigItem configItem) {
@@ -232,14 +241,14 @@ public abstract class StorageCore {
     public abstract void renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
-     * Search a file or directory by its name in the current directory
+     * List all files with matching name in the current directory
      *
      * @param name The name of the file or directory
      */
     public abstract List<String> searchByName(String name);
 
     /**
-     * Search a file by its extension in the current directory
+     * List all files with matching extension in the current directory
      *
      * @param extension The extension to filter by
      */
@@ -252,15 +261,53 @@ public abstract class StorageCore {
      */
     public abstract List<String> searchByModifiedAfter(Date date);
 
-    public abstract List<String> searchAllFromRoot();
+    /**
+     * List all files in the given directory
+     *
+     * @param root The directory to search in
+     * @return List of results
+     */
+    public abstract List<String> searchAllFromRoot(String root);
 
-    public abstract List<String> searchAllFromRootWithoutRoot();
+    /**
+     * List all files within directories of given directory
+     *
+     * @param root The directory to search in
+     * @return List of results
+     */
+    public abstract List<String> searchAllFromRootWithoutRoot(String root);
 
+    /**
+     * List all files and sub-files in the current directory
+     *
+     * @return List of results
+     */
     public abstract List<String> searchAll();
 
+    /**
+     * List all files which contain a substring in their name in the current directory
+     *
+     * @param substring The substring to search with
+     * @return List of results
+     */
     public abstract List<String> searchByPartOfName(String substring);
 
+    /**
+     * Sort the list of results
+     *
+     * @param result    The results to sort
+     * @param sortType  The type to sort by
+     * @param orderType The order to sort by
+     * @return Sorted list of results
+     */
     public abstract List<String> sortResults(List<String> result, SortType sortType, OrderType orderType);
 
-    public abstract List<String> filterResults(List<String> result, List<FilterType> filterType);
+    /**
+     * Filter the list of results before printing it
+     *
+     * @param result      The results to filter
+     * @param filterTypes The list of values to keep
+     * @return Filtered list of results
+     */
+    public abstract List<String> filterResults(List<String> result, List<FilterType> filterTypes);
 }
