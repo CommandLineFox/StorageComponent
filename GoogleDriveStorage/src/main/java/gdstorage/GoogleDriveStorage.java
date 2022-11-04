@@ -112,7 +112,8 @@ public class GoogleDriveStorage extends StorageCore {
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
                 clientSecrets, SCOPES).setAccessType("offline").build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+
+        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("noviuser1");
         return credential;
     }
 
@@ -124,6 +125,7 @@ public class GoogleDriveStorage extends StorageCore {
      */
     public static Drive getDriveService() throws IOException {
         Credential credential = authorize();
+        //credential.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
         return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
                 .setApplicationName(APPLICATION_NAME)
                 .build();
@@ -135,8 +137,8 @@ public class GoogleDriveStorage extends StorageCore {
 
         Drive service = getDriveService();
 
-      /*  FileList result = service.files().list()
-                .setPageSize(10)
+/*       //ZA PRETRAGU
+        FileList result = service.files().list()
                 .setFields("nextPageToken, files(id, name)")
                 .execute();
         List<File> files = result.getFiles();
@@ -147,16 +149,16 @@ public class GoogleDriveStorage extends StorageCore {
             for (File file : files) {
                 System.out.printf("%s (%s)\n", file.getName(), file.getId());
             }
-        }*/
-
-
-
+        }
+*/
+        //ZA DODAVANJE
+      //  System.out.println(System.getProperty("user.dir"));
         try {
             // File's metadata.
             File fileMetadata = new File();
             fileMetadata.setName("config.json");
-            fileMetadata.setParents(Collections.singletonList("appDataFolder"));
-            java.io.File filePath = new java.io.File("proba.json");
+            fileMetadata.setParents(Collections.singletonList("1amNRP4XaNWzV_Dw36tC-Mvyo42EaSqkE"));
+            java.io.File filePath = new java.io.File("Ime");
             FileContent mediaContent = new FileContent("application/json", filePath);
             File file = service.files().create(fileMetadata, mediaContent)
                     .setFields("id")
@@ -192,10 +194,12 @@ public class GoogleDriveStorage extends StorageCore {
 
 
         try {
+
+
             file = GoogleDriveStorage.getDriveService().files().create(file)
                     .setFields("id,parents")
                     .execute();
-            System.out.println("New Root ID: " + file.getId());
+
         } catch (IOException e) {
             e.printStackTrace();
         }
