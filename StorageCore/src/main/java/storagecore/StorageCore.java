@@ -6,9 +6,11 @@ import storagecore.enums.ConfigItem;
 import storagecore.enums.FilterType;
 import storagecore.enums.OrderType;
 import storagecore.enums.SortType;
+import storagecore.exceptions.BannedExtensionUploadException;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.FileAlreadyExistsException;
 import java.util.*;
@@ -109,7 +111,7 @@ public abstract class StorageCore {
      *
      * @return The amount of files as an integer
      */
-    public HashMap getFileCountLimit() {
+    public HashMap getFileCountLimits() {
         return (HashMap) readConfig(ConfigItem.FILE_COUNT_LIMITS);
     }
 
@@ -169,6 +171,9 @@ public abstract class StorageCore {
      * Create a directory in the current directory
      *
      * @param name The name of the directory
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileAlreadyExistsException     If a directory with the same name already exists
+     * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name) throws
             FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
@@ -178,6 +183,9 @@ public abstract class StorageCore {
      *
      * @param name  The name of the directory
      * @param limit The limit of files and directories
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileAlreadyExistsException     If a directory with the same name already exists
+     * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name, int limit) throws
             FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
@@ -187,6 +195,9 @@ public abstract class StorageCore {
      *
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileAlreadyExistsException     If a directory with the same name already exists
+     * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(int start, int end) throws
             FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
@@ -197,6 +208,9 @@ public abstract class StorageCore {
      * @param name  The name prefix
      * @param start The bottom number
      * @param end   The top number
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileAlreadyExistsException     If a directory with the same name already exists
+     * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name, int start, int end) throws
             FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
@@ -205,6 +219,10 @@ public abstract class StorageCore {
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileAlreadyExistsException     If a file with the same name already exists
+     * @throws FileCountLimitReachedException If the parent directory is full
+     * @throws MaxSizeLimitBreachedException  If the storage is full
      */
     public abstract void addFile(String file) throws
             FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
@@ -213,6 +231,7 @@ public abstract class StorageCore {
      * Delete a file or directory at a given path
      *
      * @param name The name of the file or directory
+     * @throws FileNotFoundException If a file with specified name doesn't exist
      */
     public abstract void deleteFileOrFolder(String name) throws FileNotFoundException;
 
@@ -221,6 +240,10 @@ public abstract class StorageCore {
      *
      * @param name The name of the file to move
      * @param path The relative path where the file will be moved to
+     * @throws FileNotFoundException          If the root doesn't exist
+     * @throws FileNotFoundException          If a file with specified name doesn't exist
+     * @throws FileAlreadyExistsException     If a file with specified name already exists in the new location
+     * @throws FileCountLimitReachedException If the new location is full
      */
     public abstract void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
@@ -229,6 +252,9 @@ public abstract class StorageCore {
      *
      * @param name The name of the file to download
      * @param path The path to place the file in
+     * @throws FileNotFoundException      If the root doesn't exist
+     * @throws FileNotFoundException      If a file with specified name doesn't exist
+     * @throws FileAlreadyExistsException If a file with specified name already exists in the download location
      */
     public abstract void downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
 
@@ -237,6 +263,9 @@ public abstract class StorageCore {
      *
      * @param name    The name of the file to rename
      * @param newName The new name
+     * @throws FileNotFoundException      If the root doesn't exist
+     * @throws FileNotFoundException      If a file with specified name doesn't exist
+     * @throws FileAlreadyExistsException If a file with the same new name already exists
      */
     public abstract void renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException;
 
@@ -310,4 +339,34 @@ public abstract class StorageCore {
      * @return Filtered list of results
      */
     public abstract List<String> filterResults(List<String> result, List<FilterType> filterTypes);
+
+    /**
+     * Check if the file would go over the allowed
+     *
+     * @param root The directory that's being checked
+     * @throws FileNotFoundException          If the directory doesn't exist
+     * @throws FileCountLimitReachedException If the directory is full
+     */
+    protected abstract void checkFileCountLimit(String root) throws FileNotFoundException, FileCountLimitReachedException;
+
+    /**
+     * Check if an extension is in the list of banned extensions
+     *
+     * @param name The extension of the file
+     * @throws BannedExtensionUploadException If the extension is in the list of banned extensions
+     */
+    protected void checkBannedExtension(String name) throws BannedExtensionUploadException {
+        if (getBannedExtensions().contains(name.toLowerCase().trim())) {
+            throw new BannedExtensionUploadException();
+        }
+    }
+
+    /**
+     * Check if the storage is full
+     *
+     * @param size The size of the file
+     * @throws FileNotFoundException         If the root doesn't exist
+     * @throws MaxSizeLimitBreachedException If the storage is full
+     */
+    protected abstract void checkMaxSizeLimit(double size) throws FileNotFoundException, MaxSizeLimitBreachedException;
 }
