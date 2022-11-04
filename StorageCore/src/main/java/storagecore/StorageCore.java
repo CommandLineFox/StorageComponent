@@ -171,36 +171,33 @@ public abstract class StorageCore {
      * Create a directory in the current directory
      *
      * @param name The name of the directory
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name) throws
-            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+            FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create a directory in the current directory with a file count limit
      *
      * @param name  The name of the directory
      * @param limit The limit of files and directories
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name, int limit) throws
-            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+            FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
      *
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(int start, int end) throws
-            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+            FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -208,24 +205,22 @@ public abstract class StorageCore {
      * @param name  The name prefix
      * @param start The bottom number
      * @param end   The top number
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
     public abstract void createDirectory(String name, int start, int end) throws
-            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+            FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileAlreadyExistsException     If a file with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      * @throws MaxSizeLimitBreachedException  If the storage is full
      */
     public abstract void addFile(String file) throws
-            FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
+            FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
 
     /**
      * Delete a file or directory at a given path
@@ -240,7 +235,6 @@ public abstract class StorageCore {
      *
      * @param name The name of the file to move
      * @param path The relative path where the file will be moved to
-     * @throws FileNotFoundException          If the root doesn't exist
      * @throws FileNotFoundException          If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException     If a file with specified name already exists in the new location
      * @throws FileCountLimitReachedException If the new location is full
@@ -252,7 +246,6 @@ public abstract class StorageCore {
      *
      * @param name The name of the file to download
      * @param path The path to place the file in
-     * @throws FileNotFoundException      If the root doesn't exist
      * @throws FileNotFoundException      If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException If a file with specified name already exists in the download location
      */
@@ -263,7 +256,6 @@ public abstract class StorageCore {
      *
      * @param name    The name of the file to rename
      * @param newName The new name
-     * @throws FileNotFoundException      If the root doesn't exist
      * @throws FileNotFoundException      If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException If a file with the same new name already exists
      */
@@ -344,10 +336,9 @@ public abstract class StorageCore {
      * Check if the file would go over the allowed
      *
      * @param root The directory that's being checked
-     * @throws FileNotFoundException          If the directory doesn't exist
      * @throws FileCountLimitReachedException If the directory is full
      */
-    protected abstract void checkFileCountLimit(String root) throws FileNotFoundException, FileCountLimitReachedException;
+    protected abstract void checkFileCountLimit(String root) throws FileCountLimitReachedException;
 
     /**
      * Check if an extension is in the list of banned extensions
@@ -365,8 +356,7 @@ public abstract class StorageCore {
      * Check if the storage is full
      *
      * @param size The size of the file
-     * @throws FileNotFoundException         If the root doesn't exist
      * @throws MaxSizeLimitBreachedException If the storage is full
      */
-    protected abstract void checkMaxSizeLimit(double size) throws FileNotFoundException, MaxSizeLimitBreachedException;
+    protected abstract void checkMaxSizeLimit(double size) throws MaxSizeLimitBreachedException;
 }
