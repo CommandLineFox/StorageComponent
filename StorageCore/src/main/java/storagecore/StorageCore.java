@@ -10,57 +10,16 @@ import storagecore.exceptions.BannedExtensionUploadException;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.FileAlreadyExistsException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 public abstract class StorageCore {
     private String root;
     private Config config;
-
-    /**
-     * Create a storage with default settings
-     * Max size limit - 127
-     * Banned extensions - none
-     * File count limit - 20
-     *
-     * @param root The root position of the remote storage
-     */
-    public StorageCore(String root) {
-        this.root = root;
-        if (checkConfig(root)) {
-            System.out.println("Storage already has a configuration");
-        } else {
-            System.out.println("Generating configuration for storage with default parameters");
-            this.config = new Config(16000000, new ArrayList<>());
-            updateConfig();
-            System.out.println("Successfully generated configuration for storage");
-        }
-
-        System.out.println("Storage started");
-    }
-
-    /**
-     * Create a storage with custom settings
-     *
-     * @param root             The root position of the remote storage
-     * @param maxSizeLimit     The max size limit of an uploaded file
-     * @param bannedExtensions The list of banned extensions that can't be uploaded
-     */
-    public StorageCore(String root, int maxSizeLimit, List<String> bannedExtensions) {
-        this.root = root;
-        if (checkConfig(root)) {
-            System.out.println("Storage already has a configuration");
-        } else {
-            System.out.println("Generating configuration for storage with given parameters");
-            this.config = new Config(maxSizeLimit, bannedExtensions);
-            updateConfig();
-            System.out.println("Successfully generated configuration for storage");
-        }
-
-        System.out.println("Storage started");
-    }
 
     /**
      * Check if a config.json file exists at the provided root
@@ -68,7 +27,26 @@ public abstract class StorageCore {
      * @param root The path to the root of the storage
      * @return If the config.json file exists or not
      */
-    protected abstract boolean checkConfig(String root);
+    public abstract boolean checkConfig(String root);
+
+    /**
+     * Create a new configuration with default values
+     */
+    public void createConfig() {
+        this.config = new Config(16000000, new ArrayList<>());
+        updateConfig();
+    }
+
+    /**
+     * Create a new configuration with custom max size limit and banned extensions
+     *
+     * @param maxSizeLimit     The maximum limit of bytes the storage can hold
+     * @param bannedExtensions The list of banned extensions
+     */
+    public void createConfig(double maxSizeLimit, List<String> bannedExtensions) {
+        this.config = new Config(maxSizeLimit, bannedExtensions);
+        updateConfig();
+    }
 
     /**
      * Get the current root position
@@ -87,6 +65,22 @@ public abstract class StorageCore {
     public void setRoot(String root) {
         this.root = root;
     }
+
+    /**
+     * Check if a provided root path leads to an existing directory
+     *
+     * @param root The path to the storage root
+     * @return If the root exists
+     */
+    public abstract boolean checkRoot(String root);
+
+    /**
+     * Create a root folder if one doesn't exist
+     *
+     * @param root The path to use to create the root
+     * @return Whether the action was successful
+     */
+    public abstract boolean createRoot(String root);
 
     /**
      * Get the maximum size limit of an uploaded file
@@ -160,44 +154,44 @@ public abstract class StorageCore {
      *
      * @param name The name of the directory
      */
-    public abstract void enterDirectory(String name);
+    public abstract boolean enterDirectory(String name);
 
     /**
      * Return to the previous directory
      */
-    public abstract void returnBackFromDirectory();
+    public abstract boolean returnBackFromDirectory();
 
     /**
      * Create a directory in the current directory
      *
      * @param name The name of the directory
+     * @return If the action was successful or not
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
-    public abstract void createDirectory(String name) throws
-            FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract boolean createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create a directory in the current directory with a file count limit
      *
      * @param name  The name of the directory
      * @param limit The limit of files and directories
+     * @return If the action was successful or not
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
-    public abstract void createDirectory(String name, int limit) throws
-            FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract boolean createDirectory(String name, int limit) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with names in range of given numbers in the current directory
      *
      * @param start The bottom number that the file is named with
      * @param end   The top number that the file is named with
+     * @return If the action was successful or not
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
-    public abstract void createDirectory(int start, int end) throws
-            FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract boolean createDirectory(int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Create several directories with a prefix and names ending in range of numbers in the current directory
@@ -205,61 +199,65 @@ public abstract class StorageCore {
      * @param name  The name prefix
      * @param start The bottom number
      * @param end   The top number
+     * @return If the action was successful or not
      * @throws FileAlreadyExistsException     If a directory with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      */
-    public abstract void createDirectory(String name, int start, int end) throws
-            FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract boolean createDirectory(String name, int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Move a given file to the storage
      *
      * @param file The path to the file that's being added to the current directory
+     * @return If the action was successful or not
      * @throws FileAlreadyExistsException     If a file with the same name already exists
      * @throws FileCountLimitReachedException If the parent directory is full
      * @throws MaxSizeLimitBreachedException  If the storage is full
      */
-    public abstract void addFile(String file) throws
-            FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
+    public abstract boolean addFile(String file) throws FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException;
 
     /**
      * Delete a file or directory at a given path
      *
      * @param name The name of the file or directory
+     * @return If the action was successful or not
      * @throws FileNotFoundException If a file with specified name doesn't exist
      */
-    public abstract void deleteFileOrFolder(String name) throws FileNotFoundException;
+    public abstract boolean deleteFileOrFolder(String name) throws FileNotFoundException;
 
     /**
      * Move a file from current directory to a new path
      *
      * @param name The name of the file to move
      * @param path The relative path where the file will be moved to
+     * @return If the action was successful or not
      * @throws FileNotFoundException          If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException     If a file with specified name already exists in the new location
      * @throws FileCountLimitReachedException If the new location is full
      */
-    public abstract void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
+    public abstract boolean moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException;
 
     /**
      * Download a file or directory from current directory
      *
      * @param name The name of the file to download
      * @param path The path to place the file in
+     * @return If the action was successful or not
      * @throws FileNotFoundException      If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException If a file with specified name already exists in the download location
      */
-    public abstract void downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
+    public abstract boolean downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * Rename a file or directory in the current directory
      *
      * @param name    The name of the file to rename
      * @param newName The new name
+     * @return If the action was successful or not
      * @throws FileNotFoundException      If a file with specified name doesn't exist
      * @throws FileAlreadyExistsException If a file with the same new name already exists
      */
-    public abstract void renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException;
+    public abstract boolean renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException;
 
     /**
      * List all files with matching name in the current directory

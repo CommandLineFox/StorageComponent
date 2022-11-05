@@ -3,6 +3,7 @@ package localstorage;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import storagecore.StorageCore;
+import storagecore.StorageManager;
 import storagecore.enums.ConfigItem;
 import storagecore.enums.FilterType;
 import storagecore.enums.OrderType;
@@ -15,21 +16,36 @@ import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class LocalStorage extends StorageCore {
-    public LocalStorage(String root) {
-        super(root);
-    }
-
-    public LocalStorage(String root, int maxSizeLimit, List<String> bannedExtensions) {
-        super(root, maxSizeLimit, bannedExtensions);
+    static {
+        StorageManager.register(new LocalStorage());
     }
 
     @Override
-    protected boolean checkConfig(String root) {
+    public boolean checkConfig(String root) {
         File config = new File(root, "config.json");
         return config.exists();
+    }
+
+    @Override
+    public boolean checkRoot(String root) {
+        File file = new File(root);
+        return file.exists();
+    }
+
+    @Override
+    public boolean createRoot(String root) {
+        File file = new File(root);
+        boolean check = file.mkdirs();
+        if (check) {
+            setRoot(root);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -57,70 +73,82 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    public void enterDirectory(String name) {
+    public boolean enterDirectory(String name) {
         String path = getRoot() + "\\" + name;
         File f = new File(getRoot(), name);
         if (f.exists() && f.isDirectory()) {
             setRoot(path);
-            System.out.println("Root has been set to " + path);
+            return true;
         }
+
+        return false;
     }
 
     @Override
-    public void returnBackFromDirectory() {
+    public boolean returnBackFromDirectory() {
         String path = getRoot().substring(getRoot().lastIndexOf('\\'));
         setRoot(path);
+        return true;
     }
 
     @Override
-    public void createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException {
-        int amount = new File(getRoot()).list().length;
+    public boolean createDirectory(String name) throws FileAlreadyExistsException, FileCountLimitReachedException {
+        checkFileCountLimit(getRoot());
+
         File file = new File(getRoot(), name);
         if (file.exists()) {
             throw new FileAlreadyExistsException("Provided directory " + name + " already exists.");
         }
 
-        boolean check = file.mkdir();
-        if (check) {
-            System.out.println("Successfully created directory" + name);
-        } else {
-            System.out.println("Something went wrong when creating the directory");
+        return file.mkdir();
+    }
+
+    @Override
+    public boolean createDirectory(String name, int limit) throws FileAlreadyExistsException, FileCountLimitReachedException {
+        checkFileCountLimit(getRoot());
+
+
+        if (createDirectory(name)) {
+            HashMap fileCountLimits = getFileCountLimits();
+            fileCountLimits.put(getRoot() + "\\" + name, limit);
+            updateConfig();
+            return true;
         }
+
+        return false;
     }
 
     @Override
-    public void createDirectory(String s, int i) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
-
-    }
-
-    @Override
-    public void createDirectory(int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
+    public boolean createDirectory(int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException {
         checkFileCountLimit(getRoot());
 
         for (int i = start; i <= end; i++) {
             String name = String.valueOf(i);
-            createDirectory(name);
+            if (!createDirectory(name)) {
+                return false;
+            }
         }
+        return true;
     }
 
     @Override
-    public void createDirectory(String name, int start, int end) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
+    public boolean createDirectory(String name, int start, int end) throws FileAlreadyExistsException, FileCountLimitReachedException {
         checkFileCountLimit(getRoot());
 
         for (int i = start; i <= end; i++) {
-            createDirectory(name + i);
+            if (!createDirectory(name + i)) {
+                return false;
+            }
         }
+
+        return true;
     }
 
     @Override
-    public void addFile(String file) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException {
+    public boolean addFile(String file) throws FileAlreadyExistsException, FileCountLimitReachedException, MaxSizeLimitBreachedException {
         File original = new File(file);
         String name = file.substring(file.lastIndexOf("\\") + 1);
         File root = new File(getRoot(), name);
-
-        if (!original.exists()) {
-            throw new FileNotFoundException("Couldn't find the file or directory you're looking for");
-        }
 
         if (root.exists()) {
             throw new FileAlreadyExistsException("The file already exists in the destination");
@@ -132,28 +160,24 @@ public class LocalStorage extends StorageCore {
 
         try {
             Files.copy(original.toPath(), root.toPath());
+            return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void deleteFileOrFolder(String name) throws FileNotFoundException {
+    public boolean deleteFileOrFolder(String name) throws FileNotFoundException {
         File file = new File(getRoot(), name);
         if (!file.exists()) {
             throw new FileNotFoundException("Couldn't find the file you're looking for");
         }
 
-        boolean result = file.delete();
-        if (result) {
-            System.out.println("Successfully deleted the file or directory");
-        } else {
-            System.out.println("There was a problem when deleting");
-        }
+        return file.delete();
     }
 
     @Override
-    public void moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
+    public boolean moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
         File original = new File(getRoot(), name);
         File root = new File(path, name);
 
@@ -169,18 +193,19 @@ public class LocalStorage extends StorageCore {
 
         try {
             Files.move(original.toPath(), root.toPath());
+            return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException {
-        moveFileOrDirectory(name, path);
+    public boolean downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException {
+        return moveFileOrDirectory(name, path);
     }
 
     @Override
-    public void renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException {
+    public boolean renameFileOrDirectory(String name, String newName) throws FileNotFoundException, FileAlreadyExistsException {
         File file = new File(getRoot(), name);
         File rename = new File(getRoot(), newName);
 
@@ -192,12 +217,7 @@ public class LocalStorage extends StorageCore {
             throw new FileAlreadyExistsException("File with specified name already exists");
         }
 
-        boolean result = file.renameTo(rename);
-        if (result) {
-            System.out.println("Successfully renamed the file or directory");
-        } else {
-            System.out.println("There was a problem when deleting");
-        }
+        return file.renameTo(rename);
     }
 
     @Override
@@ -246,11 +266,8 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    protected void checkFileCountLimit(String file) throws FileNotFoundException, FileCountLimitReachedException {
+    protected void checkFileCountLimit(String file) throws FileCountLimitReachedException {
         File root = new File(file);
-        if (!root.exists()) {
-            throw new FileNotFoundException("Couldn't find the root");
-        }
 
         if ((Integer) getFileCountLimits().get(root.toPath()) == root.list().length) {
             throw new FileCountLimitReachedException();
@@ -265,11 +282,8 @@ public class LocalStorage extends StorageCore {
     }
 
     @Override
-    protected void checkMaxSizeLimit(double size) throws FileNotFoundException, MaxSizeLimitBreachedException {
+    protected void checkMaxSizeLimit(double size) throws MaxSizeLimitBreachedException {
         File root = new File(getRoot());
-        if (!root.exists()) {
-            throw new FileNotFoundException("Couldn't find the root");
-        }
 
         if (getFolderSize(root) + size > getMaxSizeLimit()) {
             throw new MaxSizeLimitBreachedException();

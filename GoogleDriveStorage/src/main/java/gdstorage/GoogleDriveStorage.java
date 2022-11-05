@@ -1,6 +1,5 @@
 package gdstorage;
 
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,33 +23,17 @@ import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
 import storagecore.StorageCore;
+import storagecore.StorageManager;
 import storagecore.enums.ConfigItem;
 
-
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.FileContent;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
-import com.google.api.services.drive.Drive;
-import com.google.api.services.drive.DriveScopes;
-import com.google.api.services.drive.model.File;
-import com.google.api.services.drive.model.FileList;
+import storagecore.enums.FilterType;
+import storagecore.enums.OrderType;
+import storagecore.enums.SortType;
+import storagecore.exceptions.FileCountLimitReachedException;
+import storagecore.exceptions.MaxSizeLimitBreachedException;
 
-import java.io.*;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 public class GoogleDriveStorage extends StorageCore {
 
     /**
@@ -83,19 +66,13 @@ public class GoogleDriveStorage extends StorageCore {
 
     static {
         try {
+            StorageManager.register(new GoogleDriveStorage());
             HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         } catch (Throwable t) {
             t.printStackTrace();
             System.exit(1);
         }
     }
-
-    public GoogleDriveStorage(String root) {super(root);}
-
-    public GoogleDriveStorage(String root, int maxSizeLimit, List<String> bannedExtensions, int fileCountLimit) {
-        super(root, maxSizeLimit, bannedExtensions, fileCountLimit);
-    }
-
 
     /**
      * Creates an authorized Credential object.
@@ -110,8 +87,7 @@ public class GoogleDriveStorage extends StorageCore {
         GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
-                clientSecrets, SCOPES).setAccessType("offline").build();
+        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES).setAccessType("offline").build();
 
         Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("noviuser1");
         return credential;
@@ -126,9 +102,7 @@ public class GoogleDriveStorage extends StorageCore {
     public static Drive getDriveService() throws IOException {
         Credential credential = authorize();
         //credential.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-        return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
+        return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
     }
 
 
@@ -138,9 +112,7 @@ public class GoogleDriveStorage extends StorageCore {
         Drive service = getDriveService();
 
 /*       //ZA PRETRAGU
-        FileList result = service.files().list()
-                .setFields("nextPageToken, files(id, name)")
-                .execute();
+        FileList result = service.files().list().setFields("nextPageToken, files(id, name)").execute();
         List<File> files = result.getFiles();
         if (files == null || files.isEmpty()) {
             System.out.println("No files found.");
@@ -152,7 +124,7 @@ public class GoogleDriveStorage extends StorageCore {
         }
 */
         //ZA DODAVANJE
-      //  System.out.println(System.getProperty("user.dir"));
+        //  System.out.println(System.getProperty("user.dir"));
         try {
             // File's metadata.
             File fileMetadata = new File();
@@ -160,9 +132,7 @@ public class GoogleDriveStorage extends StorageCore {
             fileMetadata.setParents(Collections.singletonList("1amNRP4XaNWzV_Dw36tC-Mvyo42EaSqkE"));
             java.io.File filePath = new java.io.File("Ime");
             FileContent mediaContent = new FileContent("application/json", filePath);
-            File file = service.files().create(fileMetadata, mediaContent)
-                    .setFields("id")
-                    .execute();
+            File file = service.files().create(fileMetadata, mediaContent).setFields("id").execute();
             System.out.println("File ID: " + file.getId());
             //file.getId();
         } catch (GoogleJsonResponseException e) {
@@ -170,135 +140,192 @@ public class GoogleDriveStorage extends StorageCore {
             System.err.println("Unable to create file: " + e.getDetails());
             throw e;
         }
+    }
 
+    @Override
+    public boolean checkConfig(String s) {
+        return false;
+    }
+
+    @Override
+    public boolean checkRoot(String s) {
+        return false;
+    }
+
+    @Override
+    public boolean createRoot(String s) {
+        return false;
+    }
+
+    @Override
+    protected void updateConfig() {
 
     }
 
     @Override
-    public void enterDirectory(String s) {
-
+    protected Object readConfig(ConfigItem configItem) {
+        return null;
     }
 
     @Override
-    public void returnBackFromDirectory() {
+    public boolean enterDirectory(String s) {
 
+        return false;
     }
 
     @Override
-    public void createDirectory(String s) throws FileAlreadyExistsException {
+    public boolean returnBackFromDirectory() {
 
+        return false;
+    }
+
+    @Override
+    public boolean createDirectory(String s) throws FileAlreadyExistsException {
         File file = new File();
         file.setName(s);
         file.setMimeType("application/vnd.google-apps.folder");
         file.setParents(Collections.singletonList(getRoot()));
 
-
         try {
-
-
-            file = GoogleDriveStorage.getDriveService().files().create(file)
-                    .setFields("id,parents")
-                    .execute();
+            file = GoogleDriveStorage.getDriveService().files().create(file).setFields("id,parents").execute();
+            return true;
 
         } catch (IOException e) {
-            e.printStackTrace();
+            return false;
         }
 
-       // setRoot(file.getId()); //POSTAVLJEN NOVI ROOT kretanje
-
-
-
+        // setRoot(file.getId()); //POSTAVLJEN NOVI ROOT kretanje
     }
 
     @Override
-    public void createDirectory(int i, int i1) throws FileAlreadyExistsException {
+    public boolean createDirectory(String s, int i) throws FileAlreadyExistsException, FileCountLimitReachedException {
+        return false;
+    }
 
-
-        for(int b=i;b<=i1;b++)
-        {
+    @Override
+    public boolean createDirectory(int i, int i1) throws FileAlreadyExistsException {
+        for (int b = i; b <= i1; b++) {
             File file = new File();
             file.setName(String.valueOf(b));
             file.setMimeType("application/vnd.google-apps.folder");
             file.setParents(Collections.singletonList(getRoot()));
 
-
             try {
-                file = GoogleDriveStorage.getDriveService().files().create(file)
-                        .setFields("id,parents")
-                        .execute();
-                System.out.println("New Root ID: " + file.getId());
+                file = GoogleDriveStorage.getDriveService().files().create(file).setFields("id,parents").execute();
             } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-          //  setRoot(file.getId()); //POSTAVLJEN NOVI ROOT   kretanje
-
-        }
-    }
-
-    @Override
-    public void createDirectory(String s, int i, int i1) throws FileAlreadyExistsException {
-
-        for(int b=i;b<=i1;b++)
-        {
-            File file = new File();
-            file.setName(s+" "+b);
-            file.setMimeType("application/vnd.google-apps.folder");
-            file.setParents(Collections.singletonList(getRoot()));
-
-
-            try {
-                file = GoogleDriveStorage.getDriveService().files().create(file)
-                        .setFields("id,parents")
-                        .execute();
-                System.out.println("New Root ID: " + file.getId());
-            } catch (IOException e) {
-                e.printStackTrace();
+                return false;
             }
 
             //  setRoot(file.getId()); //POSTAVLJEN NOVI ROOT   kretanje
-
         }
+        return true;
+    }
+
+    @Override
+    public boolean createDirectory(String s, int i, int i1) throws FileAlreadyExistsException {
+        for (int b = i; b <= i1; b++) {
+            File file = new File();
+            file.setName(s + " " + b);
+            file.setMimeType("application/vnd.google-apps.folder");
+            file.setParents(Collections.singletonList(getRoot()));
+
+            try {
+                file = GoogleDriveStorage.getDriveService().files().create(file).setFields("id,parents").execute();
+                System.out.println("New Root ID: " + file.getId());
+            } catch (IOException e) {
+                return false;
+            }
+
+            //  setRoot(file.getId()); //POSTAVLJEN NOVI ROOT   kretanje
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addFile(String s) throws FileAlreadyExistsException {
+
+        return false;
+    }
+
+    @Override
+    public boolean deleteFileOrFolder(String s) throws FileNotFoundException {
+
+        return false;
+    }
+
+    @Override
+    public boolean moveFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
+
+        return false;
+    }
+
+    @Override
+    public boolean downloadFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
+
+        return false;
+    }
+
+    @Override
+    public boolean renameFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
+
+        return false;
+    }
+
+    @Override
+    public List<String> searchByName(String s) {
+
+        return null;
+    }
+
+    @Override
+    public List<String> searchByExtension(String s) {
+
+        return null;
+    }
+
+    @Override
+    public List<String> searchByModifiedAfter(Date date) {
+
+        return null;
+    }
+
+    @Override
+    public List<String> searchAllFromRoot(String s) {
+        return null;
+    }
+
+    @Override
+    public List<String> searchAllFromRootWithoutRoot(String s) {
+        return null;
+    }
+
+    @Override
+    public List<String> searchAll() {
+        return null;
+    }
+
+    @Override
+    public List<String> searchByPartOfName(String s) {
+        return null;
+    }
+
+    @Override
+    public List<String> sortResults(List<String> list, SortType sortType, OrderType orderType) {
+        return null;
+    }
+
+    @Override
+    public List<String> filterResults(List<String> list, List<FilterType> list1) {
+        return null;
+    }
+
+    @Override
+    protected void checkFileCountLimit(String s) throws FileCountLimitReachedException {
 
     }
 
     @Override
-    public void addFile(String s) throws FileNotFoundException, FileAlreadyExistsException {
-
-    }
-
-    @Override
-    public void deleteFileOrFolder(String s) throws FileNotFoundException {
-
-    }
-
-    @Override
-    public void moveFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
-
-    }
-
-    @Override
-    public void downloadFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
-
-    }
-
-    @Override
-    public void renameFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
-
-    }
-
-    @Override
-    public void searchByName(String s) {
-
-    }
-
-    @Override
-    public void searchByExtension(String s) {
-
-    }
-
-    @Override
-    public void searchByModifiedAfter(Date date) {
+    protected void checkMaxSizeLimit(double v) throws MaxSizeLimitBreachedException {
 
     }
 }

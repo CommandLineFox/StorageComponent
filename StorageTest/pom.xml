@@ -36,11 +36,13 @@
             <groupId>gdstorage</groupId>
             <artifactId>GoogleDriveStorage</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>localstorage</groupId>
             <artifactId>LocalStorage</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

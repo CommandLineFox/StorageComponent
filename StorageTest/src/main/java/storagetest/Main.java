@@ -1,20 +1,105 @@
 package storagetest;
 
-import gdstorage.GoogleDriveStorage;
-import localstorage.LocalStorage;
 import storagecore.StorageCore;
+import storagecore.StorageManager;
 
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
-import java.nio.file.FileAlreadyExistsException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
-        StorageCore storageCore=null;
+    public static StorageCore createStorage(String[] args) throws Exception {
+        String storageType = args[0];
+        String path = args[1];
+        String type;
+        if (storageType.equalsIgnoreCase("google")) {
+            type = "localstorage.LocalStorage";
+        } else if (storageType.equalsIgnoreCase("local")) {
+            type = "localstorage.LocalStorage";
+        } else {
+            type = "invalid";
+        }
+
+        if (type.equals("invalid")) {
+            throw new Exception("Invalid storage type provided");
+        }
+
+        Class.forName(type);
+        return StorageManager.getStorage(path);
+    }
+
+    public static StorageCore checkRoot(StorageCore storage, Scanner input) throws Exception {
+        boolean validRoot = storage.checkRoot(storage.getRoot());
+        if (validRoot) {
+            return storage;
+        }
+
+        System.out.println("Provided root doesn't exist");
+        if (storage.createRoot(storage.getRoot())) {
+            System.out.println("Created the missing root successfully");
+        } else {
+            throw new Exception("Couldn't create the root, please try again with a different root");
+        }
+
+        return storage;
+    }
+
+    public static StorageCore checkConfig(StorageCore storage, Scanner input) {
+        boolean configExists = storage.checkConfig(storage.getRoot());
+        if (configExists) {
+            System.out.println("Configuration already exists, starting the instance");
+            return storage;
+        }
+
+        System.out.println("Configuration not found, would you like to create a new one or use a default one");
+        System.out.println("1 - Create a new one");
+        System.out.println("2 - Use a default one");
+        String option = input.nextLine().trim();
+
+        boolean task = false;
+        while (!task) {
+            switch (option) {
+                case "1" -> {
+                    System.out.println("Enter the max size the storage would be");
+                    double maxSizeLimit = input.nextDouble();
+
+                    System.out.println("Enter a list of banned extensions separated by commas");
+                    String[] extensions = input.nextLine().split(",");
+                    List<String> bannedExtensions = new ArrayList<>();
+                    for (String extension : extensions) {
+                        bannedExtensions.add(extension.toLowerCase().trim());
+                    }
+
+                    storage.createConfig(maxSizeLimit, bannedExtensions);
+                    System.out.println("Created a new configuration");
+                    task = true;
+                }
+                case "2" -> {
+                    storage.createConfig();
+                    System.out.println("Created a default configuration");
+                    task = true;
+                }
+                default -> System.out.println("invalid option, valid options are 1 and 2");
+            }
+        }
+
+        return storage;
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length < 2 || args.length > 2) {
+            throw new Exception("Invalid amount of arguments, expected 2, got " + args.length);
+        }
+
+        System.out.println("Welcome to storage");
+
+        Scanner input = new Scanner(System.in);
+        StorageCore storage = createStorage(args);
+        ;
+        storage = checkRoot(storage, input);
+        storage = checkConfig(storage, input);
+
+       /* StorageCore storageCore=null;
         System.out.println("Welcome, to storage");
         System.out.println("To create local storage input 1,to create google drive storage input 2");
         String input = "";
@@ -68,18 +153,6 @@ public class Main {
                     }
                 }
             }
-            //Create directory
-            /*
-                                                Dozviljeno unositi
-
-                        create ime_fila                 -> Kreira file koji se zove ime_fila
-                        create 5-10                     -> Kreira 6 filova koji se zovu 5,6,...,10
-                        crete ime_fila ogranicenje      -> Prvo i ima ogranicen broj filova u sebi
-                        create ime_fila 5-10            -> Kreira 6 filova koji se zovu ime_fila5,..., ime_fila10
-
-
-             */
-
 
             else if (input.split(" ")[0].equalsIgnoreCase("create")) {
 
@@ -195,6 +268,6 @@ public class Main {
             } else if (input.equalsIgnoreCase("help")) {
                 System.out.println("Spisak komandi kako se koristi apk");
             }
-        }
+        }*/
     }
 }
