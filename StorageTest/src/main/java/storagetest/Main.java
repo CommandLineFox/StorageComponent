@@ -2,7 +2,14 @@ package storagetest;
 
 import storagecore.StorageCore;
 import storagecore.StorageManager;
+import storagecore.enums.FilterType;
+import storagecore.enums.OrderType;
+import storagecore.enums.SortType;
 
+import java.io.FileNotFoundException;
+import java.nio.file.FileAlreadyExistsException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
@@ -26,7 +33,7 @@ public class Main {
         return StorageManager.getStorage(path);
     }
 
-    public static StorageCore checkRoot(StorageCore storage, Scanner input) throws Exception {
+    public static StorageCore checkRoot(StorageCore storage) throws Exception {
         boolean validRoot = storage.checkRoot(storage.getRoot());
         if (validRoot) {
             return storage;
@@ -103,7 +110,7 @@ public class Main {
         return args;
     }
 
-    public static void handleCommands(StorageCore storage, Scanner input) {
+    public static void handleCommands(StorageCore storage, Scanner input) throws FileAlreadyExistsException, FileNotFoundException, ParseException {
         String line = input.nextLine();
         String command = getCommand(line);
         while (!Objects.equals(command, "exit")) {
@@ -117,31 +124,312 @@ public class Main {
                 case "cd" -> {
                     String[] args = getArguments(line);
                     if (args.length != 1) {
-                        System.out.println("Expected 1 argument, got 0");
+                        System.out.println("Expected 1 argument, got " + args.length);
                         break;
                     }
 
                     String path = args[0];
-                    boolean success = false;
                     if (path.equalsIgnoreCase("..")) {
-                        success = storage.returnBackFromDirectory();
-
-                        if (success) {
+                        if (storage.returnBackFromDirectory()) {
                             System.out.println("Successfully returned to parent directory");
                         } else {
                             System.out.println("Unable to return to parent directory");
                         }
                     } else {
-                        success = storage.enterDirectory(path);
-                        if (success) {
+                        if (storage.enterDirectory(path)) {
                             System.out.println("Successfully entered new directory as root");
                         } else {
-                            System.out.println("Unalbe to enter new directory");
+                            System.out.println("Unable to enter new directory");
                         }
                     }
                 }
                 case "create" -> {
-                    System.out.println("create");
+                    System.out.println("What would you like to create?");
+                    System.out.println("1 - A new directory with a name");
+                    System.out.println("2 - A new directory with a name and limit of files that can be in it");
+                    System.out.println("3 - A range of directories");
+                    System.out.println("4 - A range of directories that start with a name");
+                    String option = input.nextLine().trim();
+
+                    boolean task = false;
+                    while (!task) {
+                        switch (option) {
+                            case "1" -> {
+                                System.out.println("Enter the new directory's name");
+                                String name = input.nextLine();
+
+                                boolean success = storage.createDirectory(name);
+                                if (success) {
+                                    System.out.println("Successfully created the new directory");
+                                } else {
+                                    System.out.println("Something went wrong when trying to create the new directory");
+                                }
+
+                                task = true;
+                            }
+                            case "2" -> {
+                                System.out.println("Enter the new directory's name");
+                                String name = input.nextLine();
+
+                                System.out.println("Enter the new directory's limit of files");
+                                int limit = Integer.parseInt(input.nextLine());
+
+                                boolean success = storage.createDirectory(name, limit);
+                                if (success) {
+                                    System.out.println("Successfully created the new directory");
+                                } else {
+                                    System.out.println("Something went wrong when trying to create the new directory");
+                                }
+
+                                task = true;
+                            }
+                            case "3" -> {
+                                System.out.println("Enter the bottom value of the range");
+                                int start = Integer.parseInt(input.nextLine());
+
+                                System.out.println("Enter the top value of the range");
+                                int end = Integer.parseInt(input.nextLine());
+
+                                boolean success = storage.createDirectory(start, end);
+                                if (success) {
+                                    System.out.println("Successfully created the new directories");
+                                } else {
+                                    System.out.println("Something went wrong when trying to create some of the directories");
+                                }
+
+                                task = true;
+                            }
+                            case "4" -> {
+                                System.out.println("Enter the prefix name for the directories");
+                                String name = input.nextLine();
+
+                                System.out.println("Enter the bottom value of the range");
+                                int start = Integer.parseInt(input.nextLine());
+
+                                System.out.println("Enter the top value of the range");
+                                int end = Integer.parseInt(input.nextLine());
+
+                                boolean success = storage.createDirectory(name, start, end);
+                                if (success) {
+                                    System.out.println("Successfully created the new directories");
+                                } else {
+                                    System.out.println("Something went wrong when trying to create some of the directories");
+                                }
+
+                                task = true;
+                            }
+                            default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3, and 4");
+                        }
+                    }
+                }
+                case "delete" -> {
+                    String[] args = getArguments(line);
+                    if (args.length != 1) {
+                        System.out.println("Expected 1 argument, got " + args.length);
+                        break;
+                    }
+
+                    String name = args[0];
+                    if (storage.deleteFileOrFolder(name)) {
+                        System.out.println("Successfully deleted the file or directory");
+                    } else {
+                        System.out.println("Unable to delete the file or directory");
+                    }
+                }
+                case "upload" -> {
+                    String[] args = getArguments(line);
+                    if (args.length != 1) {
+                        System.out.println("Expected 1 argument, got " + args.length);
+                        break;
+                    }
+
+                    String name = args[0];
+                    if (storage.addFile(name)) {
+                        System.out.println("Successfully added the file or directory to storage");
+                    } else {
+                        System.out.println("Unable to add the file or directory");
+                    }
+                }
+                case "download" -> {
+                    String[] args = getArguments(line);
+                    if (args.length != 2) {
+                        System.out.println("Expected 2 arguments, got " + args.length);
+                        break;
+                    }
+
+                    String name = args[0];
+                    String path = args[1];
+                    if (storage.downloadFileOrDirectory(name, path)) {
+                        System.out.println("Successfully downloaded the file or directory to local files");
+                    } else {
+                        System.out.println("Unable to download the file or directory");
+                    }
+                }
+                case "move" -> {
+                    String[] args = getArguments(line);
+                    if (args.length != 2) {
+                        System.out.println("Expected 2 arguments, got " + args.length);
+                        break;
+                    }
+
+                    String name = args[0];
+                    String path = args[1];
+                    if (storage.moveFileOrDirectory(name, path)) {
+                        System.out.println("Successfully moved the file or directory to a new location");
+                    } else {
+                        System.out.println("Unable to move the file or directory");
+                    }
+                }
+                case "search" -> {
+                    List<String> result = new ArrayList<>();
+                    System.out.println("What would you like to search by?");
+                    System.out.println("1 - Name of file or directory in current directory");
+                    System.out.println("2 - Extension of file in current directory");
+                    System.out.println("3 - Last modified date in current directory");
+                    System.out.println("4 - All files in current directory");
+                    System.out.println("5 - All files from directories of current directory");
+                    System.out.println("6 - All files and sub-files in current directory");
+                    System.out.println("7 - Substring matching any name of files or directories in current directory");
+                    String option = input.nextLine().trim();
+
+                    boolean task = false;
+                    while (!task) {
+                        switch (option) {
+                            case "1" -> {
+                                System.out.println("Enter the name to search with");
+                                String name = input.nextLine();
+                                result.addAll(storage.searchByName(name));
+                                task = true;
+                            }
+                            case "2" -> {
+                                System.out.println("Enter the extension to search with");
+                                String extension = input.nextLine();
+                                result.addAll(storage.searchByExtension(extension));
+                                task = true;
+                            }
+                            case "3" -> {
+                                System.out.println("Enter the date to search newer files with");
+                                Date date = new SimpleDateFormat("dd/MM/yyyy").parse(input.nextLine());
+                                result.addAll(storage.searchByModifiedAfter(date));
+                                task = true;
+                            }
+                            case "4" -> result.addAll(storage.searchAllFromRoot(storage.getRoot()));
+                            case "5" -> result.addAll(storage.searchAllFromRootWithoutRoot(storage.getRoot()));
+                            case "6" -> {
+                                result = storage.searchAllFromRoot(storage.getRoot());
+                                result.addAll(storage.searchAllFromRootWithoutRoot(storage.getRoot()));
+                            }
+                            case "7" -> {
+                                System.out.println("Enter the substring to search with");
+                                String substring = input.nextLine();
+                                result.addAll(storage.searchByPartOfName(substring));
+                                task = true;
+                            }
+                            default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3, 4, 5, 6 and 7");
+                        }
+                    }
+
+                    System.out.println("Would you like to sort your results");
+                    System.out.println("1 - Yes");
+                    System.out.println("2 - No");
+                    String sorting = input.nextLine();
+
+                    task = false;
+                    while (!task) {
+                        switch (sorting) {
+                            case "1" -> {
+                                System.out.println("Please choose what to sort by");
+                                System.out.println("1 - Name");
+                                System.out.println("2 - Extension");
+                                System.out.println("3 - Creation date");
+                                System.out.println("4 - Last modified date");
+                                String sortingOption = input.nextLine();
+                                SortType sortType = SortType.NAME;
+
+                                boolean subTask = false;
+                                while (!subTask) {
+                                    switch (sortingOption) {
+                                        case "1" -> subTask = true;
+                                        case "2" -> {
+                                            sortType = SortType.EXTENSION;
+                                            subTask = true;
+                                        }
+                                        case "3" -> {
+                                            sortType = SortType.CREATION_DATE;
+                                            subTask = true;
+                                        }
+                                        case "4" -> {
+                                            sortType = SortType.MODIFY_DATE;
+                                            subTask = true;
+                                        }
+                                        default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3 and 4");
+                                    }
+                                }
+
+
+                                System.out.println("Please choose what order to sort in");
+                                System.out.println("1 - Ascending");
+                                System.out.println("2 - Descending");
+                                String orderOption = input.nextLine();
+                                OrderType orderType = OrderType.ASCENDING;
+
+                                subTask = false;
+                                while (!subTask) {
+                                    switch (orderOption) {
+                                        case "1" -> subTask = true;
+                                        case "2" -> {
+                                            orderType = OrderType.DESCENDING;
+                                            subTask = true;
+                                        }
+                                        default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                    }
+                                }
+
+                                result = storage.sortResults(result, sortType, orderType);
+                                task = true;
+                            }
+                            case "2" -> task = true;
+                            default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                        }
+                    }
+
+
+                    System.out.println("Would you like to filter your results");
+                    System.out.println("1 - Yes");
+                    System.out.println("2 - No");
+                    String filtering = input.nextLine();
+
+                    task = false;
+                    while (!task) {
+                        switch (filtering) {
+                            case "1" -> {
+                                System.out.println("Please input one or more filtering option");
+                                System.out.println("1 - File name");
+                                System.out.println("2 - File extension");
+                                System.out.println("3 - File creation date");
+                                System.out.println("4 - File's last modified date");
+                                String[] filteringOptions = input.nextLine().split("/\s/");
+                                List<FilterType> filterTypes = new ArrayList<>();
+                                for (String filterOption : filteringOptions) {
+                                    switch (filterOption) {
+                                        case "1" -> filterTypes.add(FilterType.NAME);
+                                        case "2" -> filterTypes.add(FilterType.EXTENSION);
+                                        case "3" -> filterTypes.add(FilterType.CREATION_DATE);
+                                        case "4" -> filterTypes.add(FilterType.MODIFY_DATE);
+                                        default -> System.out.println(filterOption + " was an invalid option, skipping");
+                                    }
+                                }
+                                result = storage.filterResults(result, filterTypes);
+                                task = true;
+                            }
+                            case "2" -> task = true;
+                            default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                        }
+                    }
+
+                    for (String found : result) {
+                        System.out.println(found);
+                    }
                 }
                 default -> System.out.println("Invalid command, please see \"help\" for a list of valid commands");
             }
@@ -152,7 +440,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2 || args.length > 2) {
+        if (args.length != 2) {
             throw new Exception("Invalid amount of arguments, expected 2, got " + args.length);
         }
 
@@ -160,179 +448,11 @@ public class Main {
 
         Scanner input = new Scanner(System.in);
         StorageCore storage = createStorage(args);
-        ;
-        storage = checkRoot(storage, input);
+
+        storage = checkRoot(storage);
         storage = checkConfig(storage, input);
 
-        /*System.out.println("Type a command or \"exit\" to close the program. See \"help\" for a full list of commands");
+        System.out.println("Type a command or \"exit\" to close the program. See \"help\" for a full list of commands");
         handleCommands(storage, input);
-
-        StorageCore storageCore = null;
-        System.out.println("Welcome, to storage");
-        System.out.println("To create local storage input 1,to create google drive storage input 2");
-        String input = "";
-
-        Scanner s = new Scanner(new InputStreamReader(System.in));
-        input = s.nextLine();
-        //Creating storage
-        if (input.equals("1") || input.equals("2")) {
-            System.out.println("Enter root directory(enter def for default directory):");
-            String directory = s.nextLine();
-
-            System.out.println("Enter maximum size(in bytes)");
-            int maxbytes = Integer.parseInt(s.nextLine());
-
-            System.out.println("Enter all banned extensions:");
-            List<String> bannedextensions = List.of(s.nextLine().split(" "));
-
-
-            if (input.equals("1")) {
-
-
-                //storageCore = new LocalStorage(directory, maxbytes, bannedextensions, filecount);
-            } else {
-                if (directory.equalsIgnoreCase("def"))
-                    directory = "Root";
-
-                storageCore = new GoogleDriveStorage(directory, maxbytes, bannedextensions);
-
-            }
-        }
-        if (storageCore != null)
-            while (!input.equalsIgnoreCase("exit")) {
-                input = s.nextLine();
-                //Exit
-                if (input.equalsIgnoreCase("exit")) {
-                    break;
-                }
-
-                if (input.split(" ")[0].equalsIgnoreCase("cd")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2)//Create imefajla
-                    {
-                        if (niz.get(1).equals(".."))//VRATI SE NAZAD
-                        {
-                            storageCore.returnBackFromDirectory();
-
-                        } else//Idi u zadati direktorijum
-                        {
-                            storageCore.enterDirectory(niz.get(1));
-                        }
-                    }
-                } else if (input.split(" ")[0].equalsIgnoreCase("create")) {
-
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2)//Create imefajla
-                    {
-                        try {
-                            storageCore.createDirectory(niz.get(1));
-
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    } else if (niz.size() == 3)//Create 1 20
-                    {
-
-                        try {
-                            storageCore.createDirectory(Integer.parseInt(niz.get(1)), Integer.parseInt(niz.get(2)));
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    } else if (niz.size() == 4)//Create 1 20 imefajla
-                    {
-                        try {
-                            storageCore.createDirectory(niz.get(1), Integer.parseInt(niz.get(2)), Integer.parseInt(niz.get(1)));
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    }
-
-                } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("addfile")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2) {
-
-                        try {
-                            storageCore.addFile(niz.get(1));
-                        } catch (FileAlreadyExistsException e) {
-                            e.printStackTrace();
-                        }
-
-                    }
-                } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("delete")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2) {
-                        try {
-                            storageCore.deleteFileOrFolder(niz.get(1));
-                        } catch (FileNotFoundException e) {
-                            System.out.println("Invalid file name");
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (input.split(" ")[0].equalsIgnoreCase("move")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 3) {
-                        try {
-                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                        } catch (FileNotFoundException e) {
-                            System.out.println("Invalid path");
-                            e.printStackTrace();
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    }
-
-                } else if (input.split(" ")[0].equalsIgnoreCase("download")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 3) {
-                        try {
-                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                        } catch (FileNotFoundException e) {
-                            System.out.println("Invalid path");
-                            e.printStackTrace();
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (input.equalsIgnoreCase("rename")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 3) {
-                        try {
-                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                        } catch (FileNotFoundException e) {
-                            System.out.println("Invalid path");
-                            e.printStackTrace();
-                        } catch (FileAlreadyExistsException e) {
-                            System.out.println("File already exists");
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (input.split(" ")[0].equalsIgnoreCase("searchByName")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2) {
-                        storageCore.searchByName(niz.get(1));
-                    }
-                } else if (input.split(" ")[0].equalsIgnoreCase("searchByExtension")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2) {
-                        storageCore.searchByExtension(niz.get(1));
-                    }
-                } else if (input.split(" ")[0].equalsIgnoreCase("searchByModifiedAfter")) {
-                    List<String> niz = List.of(input.split(" "));
-                    if (niz.size() == 2) {
-                        try {
-                            storageCore.searchByModifiedAfter(new SimpleDateFormat("dd/MM/yyyy").parse(niz.get(1)));
-                        } catch (ParseException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (input.equalsIgnoreCase("help")) {
-                    System.out.println("Spisak komandi kako se koristi apk");
-                }
-            }*/
     }
 }

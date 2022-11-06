@@ -118,7 +118,6 @@ public class LocalStorage extends StorageCore {
     public boolean createDirectory(String name, int limit) throws FileAlreadyExistsException, FileCountLimitReachedException {
         checkFileCountLimit(getRoot());
 
-
         if (createDirectory(name)) {
             HashMap fileCountLimits = getFileCountLimits();
             fileCountLimits.put(getRoot() + "\\" + name, limit);
@@ -212,7 +211,25 @@ public class LocalStorage extends StorageCore {
 
     @Override
     public boolean downloadFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException {
-        return moveFileOrDirectory(name, path);
+        File original = new File(getRoot(), name);
+        File root = new File(path, name);
+
+        if (!original.exists()) {
+            throw new FileNotFoundException("Couldn't find the file or directory you're looking for");
+        }
+
+        if (root.exists()) {
+            throw new FileAlreadyExistsException("The file already exists in the destination");
+        }
+
+        checkFileCountLimit(root.toPath().toString());
+
+        try {
+            Files.copy(original.toPath(), root.toPath());
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
