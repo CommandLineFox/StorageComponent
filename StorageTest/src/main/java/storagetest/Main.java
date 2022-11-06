@@ -3,9 +3,7 @@ package storagetest;
 import storagecore.StorageCore;
 import storagecore.StorageManager;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
     public static StorageCore createStorage(String[] args) throws Exception {
@@ -13,7 +11,7 @@ public class Main {
         String path = args[1];
         String type;
         if (storageType.equalsIgnoreCase("google")) {
-            type = "localstorage.LocalStorage";
+            type = "gdstorage.GoogleDriveStorage";
         } else if (storageType.equalsIgnoreCase("local")) {
             type = "localstorage.LocalStorage";
         } else {
@@ -35,12 +33,11 @@ public class Main {
         }
 
         System.out.println("Provided root doesn't exist");
-        if (storage.createRoot(storage.getRoot())) {
-            System.out.println("Created the missing root successfully");
-        } else {
+        if (!storage.createRoot(storage.getRoot())) {
             throw new Exception("Couldn't create the root, please try again with a different root");
         }
 
+        System.out.println("Created the missing root successfully");
         return storage;
     }
 
@@ -86,6 +83,74 @@ public class Main {
         return storage;
     }
 
+    public static String getCommand(String input) {
+        String[] split = input.split("/\s/");
+        if (split.length == 0) {
+            System.out.println("Couldn't find a command");
+            return null;
+        }
+        return split[0].trim().toLowerCase();
+    }
+
+    public static String[] getArguments(String input) {
+        String[] split = input.split("/\s/");
+        List<String> arguments = new ArrayList<>(Arrays.asList(split).subList(1, split.length));
+        String[] args = new String[arguments.size()];
+        for (int i = 0; i < args.length; i++) {
+            args[i] = arguments.get(i);
+        }
+
+        return args;
+    }
+
+    public static void handleCommands(StorageCore storage, Scanner input) {
+        String line = input.nextLine();
+        String command = getCommand(line);
+        while (!Objects.equals(command, "exit")) {
+            if (command == null) {
+                line = input.nextLine();
+                command = getCommand(line);
+                continue;
+            }
+
+            switch (command) {
+                case "cd" -> {
+                    String[] args = getArguments(line);
+                    if (args.length != 1) {
+                        System.out.println("Expected 1 argument, got 0");
+                        break;
+                    }
+
+                    String path = args[0];
+                    boolean success = false;
+                    if (path.equalsIgnoreCase("..")) {
+                        success = storage.returnBackFromDirectory();
+
+                        if (success) {
+                            System.out.println("Successfully returned to parent directory");
+                        } else {
+                            System.out.println("Unable to return to parent directory");
+                        }
+                    } else {
+                        success = storage.enterDirectory(path);
+                        if (success) {
+                            System.out.println("Successfully entered new directory as root");
+                        } else {
+                            System.out.println("Unalbe to enter new directory");
+                        }
+                    }
+                }
+                case "create" -> {
+                    System.out.println("create");
+                }
+                default -> System.out.println("Invalid command, please see \"help\" for a list of valid commands");
+            }
+
+            line = input.nextLine();
+            command = getCommand(line);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length < 2 || args.length > 2) {
             throw new Exception("Invalid amount of arguments, expected 2, got " + args.length);
@@ -99,7 +164,10 @@ public class Main {
         storage = checkRoot(storage, input);
         storage = checkConfig(storage, input);
 
-       /* StorageCore storageCore=null;
+        /*System.out.println("Type a command or \"exit\" to close the program. See \"help\" for a full list of commands");
+        handleCommands(storage, input);
+
+        StorageCore storageCore = null;
         System.out.println("Welcome, to storage");
         System.out.println("To create local storage input 1,to create google drive storage input 2");
         String input = "";
@@ -123,151 +191,148 @@ public class Main {
 
                 //storageCore = new LocalStorage(directory, maxbytes, bannedextensions, filecount);
             } else {
-                if(directory.equalsIgnoreCase("def"))
-                    directory="Root";
+                if (directory.equalsIgnoreCase("def"))
+                    directory = "Root";
 
                 storageCore = new GoogleDriveStorage(directory, maxbytes, bannedextensions);
 
             }
         }
-        if(storageCore!=null)
-        while (!input.equalsIgnoreCase("exit")) {
-            input = s.nextLine();
-            //Exit
-            if (input.equalsIgnoreCase("exit")) {
-                break;
-            }
+        if (storageCore != null)
+            while (!input.equalsIgnoreCase("exit")) {
+                input = s.nextLine();
+                //Exit
+                if (input.equalsIgnoreCase("exit")) {
+                    break;
+                }
 
-            if(input.split(" ")[0].equalsIgnoreCase("cd")){
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2)//Create imefajla
-                {
-                    if(niz.get(1).equals(".."))//VRATI SE NAZAD
+                if (input.split(" ")[0].equalsIgnoreCase("cd")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2)//Create imefajla
                     {
-                        storageCore.returnBackFromDirectory();
+                        if (niz.get(1).equals(".."))//VRATI SE NAZAD
+                        {
+                            storageCore.returnBackFromDirectory();
 
+                        } else//Idi u zadati direktorijum
+                        {
+                            storageCore.enterDirectory(niz.get(1));
+                        }
                     }
-                    else//Idi u zadati direktorijum
+                } else if (input.split(" ")[0].equalsIgnoreCase("create")) {
+
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2)//Create imefajla
                     {
-                        storageCore.enterDirectory(niz.get(1));
-                    }
-                }
-            }
+                        try {
+                            storageCore.createDirectory(niz.get(1));
 
-            else if (input.split(" ")[0].equalsIgnoreCase("create")) {
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
+                    } else if (niz.size() == 3)//Create 1 20
+                    {
 
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2)//Create imefajla
-                {
-                    try {
-                        storageCore.createDirectory(niz.get(1));
-
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
-                    }
-                } else if (niz.size() == 3)//Create 1 20
-                {
-
-                    try {
-                        storageCore.createDirectory(Integer.parseInt(niz.get(1)), Integer.parseInt(niz.get(2)));
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
-                    }
-                } else if (niz.size() == 4)//Create 1 20 imefajla
-                {
-                    try {
-                        storageCore.createDirectory(niz.get(1), Integer.parseInt(niz.get(2)), Integer.parseInt(niz.get(1)));
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
-                    }
-                }
-
-            } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("addfile")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2) {
-
-                    try {
-                        storageCore.addFile(niz.get(1));
-                    } catch (FileAlreadyExistsException e) {
-                        e.printStackTrace();
+                        try {
+                            storageCore.createDirectory(Integer.parseInt(niz.get(1)), Integer.parseInt(niz.get(2)));
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
+                    } else if (niz.size() == 4)//Create 1 20 imefajla
+                    {
+                        try {
+                            storageCore.createDirectory(niz.get(1), Integer.parseInt(niz.get(2)), Integer.parseInt(niz.get(1)));
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
                     }
 
-                }
-            } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("delete")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2) {
-                    try {
-                        storageCore.deleteFileOrFolder(niz.get(1));
-                    } catch (FileNotFoundException e) {
-                        System.out.println("Invalid file name");
-                        e.printStackTrace();
-                    }
-                }
-            } else if (input.split(" ")[0].equalsIgnoreCase("move")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 3) {
-                    try {
-                        storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                    } catch (FileNotFoundException e) {
-                        System.out.println("Invalid path");
-                        e.printStackTrace();
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
-                    }
-                }
+                } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("addfile")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2) {
 
-            } else if (input.split(" ")[0].equalsIgnoreCase("download")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 3) {
-                    try {
-                        storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                    } catch (FileNotFoundException e) {
-                        System.out.println("Invalid path");
-                        e.printStackTrace();
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
+                        try {
+                            storageCore.addFile(niz.get(1));
+                        } catch (FileAlreadyExistsException e) {
+                            e.printStackTrace();
+                        }
+
                     }
-                }
-            } else if (input.equalsIgnoreCase("rename")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 3) {
-                    try {
-                        storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
-                    } catch (FileNotFoundException e) {
-                        System.out.println("Invalid path");
-                        e.printStackTrace();
-                    } catch (FileAlreadyExistsException e) {
-                        System.out.println("File already exists");
-                        e.printStackTrace();
+                } else if (input.split(" ")[0].split(" ")[0].equalsIgnoreCase("delete")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2) {
+                        try {
+                            storageCore.deleteFileOrFolder(niz.get(1));
+                        } catch (FileNotFoundException e) {
+                            System.out.println("Invalid file name");
+                            e.printStackTrace();
+                        }
                     }
-                }
-            } else if (input.split(" ")[0].equalsIgnoreCase("searchByName")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2) {
-                    storageCore.searchByName(niz.get(1));
-                }
-            } else if (input.split(" ")[0].equalsIgnoreCase("searchByExtension")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2) {
-                    storageCore.searchByExtension(niz.get(1));
-                }
-            } else if (input.split(" ")[0].equalsIgnoreCase("searchByModifiedAfter")) {
-                List<String> niz = List.of(input.split(" "));
-                if (niz.size() == 2) {
-                    try {
-                        storageCore.searchByModifiedAfter(new SimpleDateFormat("dd/MM/yyyy").parse(niz.get(1)));
-                    } catch (ParseException e) {
-                        e.printStackTrace();
+                } else if (input.split(" ")[0].equalsIgnoreCase("move")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 3) {
+                        try {
+                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
+                        } catch (FileNotFoundException e) {
+                            System.out.println("Invalid path");
+                            e.printStackTrace();
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
                     }
+
+                } else if (input.split(" ")[0].equalsIgnoreCase("download")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 3) {
+                        try {
+                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
+                        } catch (FileNotFoundException e) {
+                            System.out.println("Invalid path");
+                            e.printStackTrace();
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (input.equalsIgnoreCase("rename")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 3) {
+                        try {
+                            storageCore.moveFileOrDirectory(niz.get(1), niz.get(2));
+                        } catch (FileNotFoundException e) {
+                            System.out.println("Invalid path");
+                            e.printStackTrace();
+                        } catch (FileAlreadyExistsException e) {
+                            System.out.println("File already exists");
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (input.split(" ")[0].equalsIgnoreCase("searchByName")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2) {
+                        storageCore.searchByName(niz.get(1));
+                    }
+                } else if (input.split(" ")[0].equalsIgnoreCase("searchByExtension")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2) {
+                        storageCore.searchByExtension(niz.get(1));
+                    }
+                } else if (input.split(" ")[0].equalsIgnoreCase("searchByModifiedAfter")) {
+                    List<String> niz = List.of(input.split(" "));
+                    if (niz.size() == 2) {
+                        try {
+                            storageCore.searchByModifiedAfter(new SimpleDateFormat("dd/MM/yyyy").parse(niz.get(1)));
+                        } catch (ParseException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (input.equalsIgnoreCase("help")) {
+                    System.out.println("Spisak komandi kako se koristi apk");
                 }
-            } else if (input.equalsIgnoreCase("help")) {
-                System.out.println("Spisak komandi kako se koristi apk");
-            }
-        }*/
+            }*/
     }
 }

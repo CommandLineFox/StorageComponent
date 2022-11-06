@@ -20,8 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 
 public class LocalStorage extends StorageCore {
+    private String originalRoot;
+
     static {
         StorageManager.register(new LocalStorage());
+    }
+
+    private String getOriginalRoot() {
+        return originalRoot;
+    }
+
+    private void setOriginalRoot(String originalRoot) {
+        this.originalRoot = originalRoot;
     }
 
     @Override
@@ -42,6 +52,7 @@ public class LocalStorage extends StorageCore {
         boolean check = file.mkdirs();
         if (check) {
             setRoot(root);
+            setOriginalRoot(root);
             return true;
         } else {
             return false;
