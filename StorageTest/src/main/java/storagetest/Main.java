@@ -408,14 +408,31 @@ public class Main {
                                 System.out.println("2 - File extension");
                                 System.out.println("3 - File creation date");
                                 System.out.println("4 - File's last modified date");
+                                System.out.println("5 - Finish selection");
                                 String[] filteringOptions = input.nextLine().split("/\s/");
                                 List<FilterType> filterTypes = new ArrayList<>();
                                 for (String filterOption : filteringOptions) {
                                     switch (filterOption) {
-                                        case "1" -> filterTypes.add(FilterType.NAME);
-                                        case "2" -> filterTypes.add(FilterType.EXTENSION);
-                                        case "3" -> filterTypes.add(FilterType.CREATION_DATE);
-                                        case "4" -> filterTypes.add(FilterType.MODIFY_DATE);
+                                        case "1" -> {
+                                            if (!filterTypes.contains(FilterType.NAME)) {
+                                                filterTypes.add(FilterType.NAME);
+                                            }
+                                        }
+                                        case "2" -> {
+                                            if (!filterTypes.contains(FilterType.EXTENSION)) {
+                                                filterTypes.add(FilterType.EXTENSION);
+                                            }
+                                        }
+                                        case "3" -> {
+                                            if (!filterTypes.contains(FilterType.CREATION_DATE)) {
+                                                filterTypes.add(FilterType.CREATION_DATE);
+                                            }
+                                        }
+                                        case "4" -> {
+                                            if (!filterTypes.contains(FilterType.MODIFY_DATE)) {
+                                                filterTypes.add(FilterType.MODIFY_DATE);
+                                            }
+                                        }
                                         default -> System.out.println(filterOption + " was an invalid option, skipping");
                                     }
                                 }

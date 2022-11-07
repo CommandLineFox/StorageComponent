@@ -15,9 +15,8 @@ import storagecore.exceptions.MaxSizeLimitBreachedException;
 import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 
 public class LocalStorage extends StorageCore {
     private String originalRoot;
@@ -214,6 +213,10 @@ public class LocalStorage extends StorageCore {
         File original = new File(getRoot(), name);
         File root = new File(path, name);
 
+        if (path.contains(getRoot())) {
+            return false;
+        }
+
         if (!original.exists()) {
             throw new FileNotFoundException("Couldn't find the file or directory you're looking for");
         }
@@ -250,47 +253,149 @@ public class LocalStorage extends StorageCore {
 
     @Override
     public List<String> searchByName(String name) {
-        return null;
+        List<String> result = new ArrayList<>();
+
+        File root = new File(getRoot());
+        File[] files = root.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            String fileName = file.getName().substring(0, file.getName().lastIndexOf("."));
+            if (fileName.equalsIgnoreCase(name)) {
+                result.add(file.toPath().toString());
+            }
+        }
+
+        return result;
     }
 
     @Override
     public List<String> searchByExtension(String extension) {
-        return null;
+        List<String> result = new ArrayList<>();
+
+        File root = new File(getRoot());
+        File[] files = root.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            String fileExtension = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+            if (fileExtension.equalsIgnoreCase(extension)) {
+                result.add(file.toPath().toString());
+            }
+        }
+
+        return result;
     }
 
     @Override
     public List<String> searchByModifiedAfter(Date date) {
-        return null;
+        List<String> result = new ArrayList<>();
+
+        File root = new File(getRoot());
+        File[] files = root.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            Date lastModified = new Date(file.lastModified());
+            if (lastModified.compareTo(date) >= 0) {
+                result.add(file.toPath().toString());
+            }
+        }
+
+        return result;
     }
 
     @Override
-    public List<String> searchAllFromRoot(String s) {
-        return null;
+    public List<String> searchAllFromRoot(String root) {
+        List<String> result = new ArrayList<>();
+
+        File rootFiles = new File(root);
+        File[] files = rootFiles.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            result.add(file.toPath().toString());
+        }
+
+        return result;
     }
 
     @Override
-    public List<String> searchAllFromRootWithoutRoot(String s) {
-        return null;
+    public List<String> searchAllFromRootWithoutRoot(String root) {
+        List<String> result = new ArrayList<>();
+
+        File rootFiles = new File(root);
+        File[] files = rootFiles.listFiles();
+        if (files == null) {
+            return result;
+        }
+
+        for (File file : files) {
+            if (file.isFile() && !root.equals(getRoot())) {
+                result.add(file.toPath().toString());
+            }
+
+            result.addAll(searchAllFromRootWithoutRoot(file.toPath().toString()));
+        }
+
+        return result;
     }
 
     @Override
     public List<String> searchAll() {
-        return null;
+        List<String> result = new ArrayList<>();
+        result.addAll(searchAllFromRoot(getRoot()));
+        result.addAll(searchAllFromRootWithoutRoot(getRoot()));
+
+        return result;
     }
 
     @Override
-    public List<String> searchByPartOfName(String s) {
-        return null;
-    }
+    public List<String> searchByPartOfName(String substring) {
+        List<String> result = new ArrayList<>();
 
-    @Override
-    public List<String> sortResults(List<String> list, SortType sortType, OrderType orderType) {
-        return null;
-    }
+        File root = new File(getRoot());
+        File[] files = root.listFiles();
+        if (files == null) {
+            return result;
+        }
 
-    @Override
-    public List<String> filterResults(List<String> list, List<FilterType> list1) {
-        return null;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                continue;
+            }
+
+            String fileName = file.getName().substring(0, file.getName().lastIndexOf("."));
+            if (fileName.toLowerCase().contains(substring.toLowerCase())) {
+                result.add(file.toPath().toString());
+            }
+        }
+
+        return result;
     }
 
     @Override
@@ -322,8 +427,6 @@ public class LocalStorage extends StorageCore {
         int length = 0;
         File[] files = root.listFiles();
         if (files != null) {
-            int count = files.length;
-
             for (File file : files) {
                 if (file.isFile()) {
                     length += file.length();

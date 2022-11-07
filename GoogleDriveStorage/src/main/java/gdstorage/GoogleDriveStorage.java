@@ -1,20 +1,12 @@
 package gdstorage;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.GeneralSecurityException;
-import java.util.*;
-
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
@@ -26,13 +18,19 @@ import com.google.api.services.drive.model.FileList;
 import storagecore.StorageCore;
 import storagecore.StorageManager;
 import storagecore.enums.ConfigItem;
-
-import com.google.api.client.http.FileContent;
-import storagecore.enums.FilterType;
-import storagecore.enums.OrderType;
-import storagecore.enums.SortType;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 public class GoogleDriveStorage extends StorageCore {
 
@@ -58,6 +56,7 @@ public class GoogleDriveStorage extends StorageCore {
 
 
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
+
     /**
      * Global instance of the scopes required by this quickstart.
      * <p>
@@ -107,39 +106,40 @@ public class GoogleDriveStorage extends StorageCore {
         //returns an authorized Credential object.
         return credential;
     }
-/*
-    public static Credential authorize() throws IOException {
-        // Load client secrets.
-        InputStream in = GoogleDriveStorage.class.getResourceAsStream("/client_secret.json");
 
-        GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+    /*
+        public static Credential authorize() throws IOException {
+            // Load client secrets.
+            InputStream in = GoogleDriveStorage.class.getResourceAsStream("/client_secret.json");
 
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES).setAccessType("offline").build();
+            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
-        Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("noviuser1");
-        return credential;
-    }
+            // Build flow and trigger user authorization request.
+            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES).setAccessType("offline").build();
 
-    /**
-     * Build and return an authorized Calendar client service.
-     *
-     * @return an authorized Calendar client service
-     * @throws IOException
-
-    public static Drive getDriveService() throws IOException {
-        try {
-
-            Drive service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
-                    .setApplicationName(APPLICATION_NAME)
-                    .build();
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
+            Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("noviuser1");
+            return credential;
         }
-            //credential.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-        return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
-    }
-*/
+
+        /**
+         * Build and return an authorized Calendar client service.
+         *
+         * @return an authorized Calendar client service
+         * @throws IOException
+
+        public static Drive getDriveService() throws IOException {
+            try {
+
+                Drive service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
+                        .setApplicationName(APPLICATION_NAME)
+                        .build();
+            } catch (GeneralSecurityException e) {
+                e.printStackTrace();
+            }
+                //credential.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+            return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
+        }
+    */
     //Kod za pretragu
     public static void main(String[] args) throws IOException {
 
@@ -152,26 +152,24 @@ public class GoogleDriveStorage extends StorageCore {
 
             File fileMetadata = new File();
             fileMetadata.setName("Ime");
-           // fileMetadata.setParents(Collections.singletonList(getRoot()));
+            // fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
-            File file =service.files().create(fileMetadata)
+            File file = service.files().create(fileMetadata)
                     .setFields("id")
                     .execute();
             // System.out.println("File ID: " + file.getId());
             //file.getId();
 
 
-
-            } catch (GeneralSecurityException generalSecurityException) {
+        } catch (GeneralSecurityException generalSecurityException) {
             generalSecurityException.printStackTrace();
         }
     }
 
 
-
-
     Drive service;
+
     @Override
     public boolean checkConfig(String s) {
         FileList result = null;
@@ -185,7 +183,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .setQ("name = '" + "config.json" + "'")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
+            for (File file : files) {
                 return true;
               /*  if(file.getParents().contains(getRoot()))
                 {
@@ -210,7 +208,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .setApplicationName(APPLICATION_NAME)
                     .build();
 
-            result =service.files().list()
+            result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
         } catch (IOException | GeneralSecurityException e) {
@@ -222,8 +220,7 @@ public class GoogleDriveStorage extends StorageCore {
         } else {
 
             for (File file : files) {
-                if(s.equals(file.getId()))
-                {
+                if (s.equals(file.getId())) {
                     setRoot(file.getId());
                     return true;
                 }
@@ -239,17 +236,17 @@ public class GoogleDriveStorage extends StorageCore {
             System.out.println("");
             File fileMetadata = new File();
             fileMetadata.setName(s);
-           // fileMetadata.setParents(Collections.singletonList(getRoot()));
+            // fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
             File file = service.files().create(fileMetadata)
                     .setFields("id")
                     .execute();
             System.out.println("File ID: " + file.getId());
-           setRoot(file.getId());
+            setRoot(file.getId());
 
-           return true;
-        }  catch (IOException e) {
+            return true;
+        } catch (IOException e) {
 
             e.printStackTrace();
         }
@@ -262,8 +259,8 @@ public class GoogleDriveStorage extends StorageCore {
             // File's metadata.
             String json = setConfigJson();
             File fileMetadata = new File();
-            Path tempor= Files.createTempFile("config",".json");
-            Files.write(tempor,json.getBytes(StandardCharsets.UTF_8));
+            Path tempor = Files.createTempFile("config", ".json");
+            Files.write(tempor, json.getBytes(StandardCharsets.UTF_8));
             fileMetadata.setName("config.json");
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/json");
@@ -287,9 +284,8 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean enterDirectory(String s) {
 
-        String dc=convertNameToId(s);
-        if(!dc.isEmpty())
-        {
+        String dc = convertNameToId(s);
+        if (!dc.isEmpty()) {
             setRoot(dc);
             return true;
         }
@@ -312,7 +308,7 @@ public class GoogleDriveStorage extends StorageCore {
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
-            File file =service.files().create(fileMetadata)
+            File file = service.files().create(fileMetadata)
                     .setFields("id")
                     .execute();
             // System.out.println("File ID: " + file.getId());
@@ -334,19 +330,19 @@ public class GoogleDriveStorage extends StorageCore {
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
-            File file =service.files().create(fileMetadata)
+            File file = service.files().create(fileMetadata)
                     .setFields("id")
                     .execute();
             System.out.println("File ID: " + file.getId());
             //file.getId();
 
-           // getFileCountLimits().put(file.getId(),i);
-           // updateConfig();
+            // getFileCountLimits().put(file.getId(),i);
+            // updateConfig();
 
         } catch (IOException e) {
 
-        e.printStackTrace();
-    }
+            e.printStackTrace();
+        }
         return false;
     }
 
@@ -354,10 +350,8 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean createDirectory(int i, int i1) throws FileAlreadyExistsException {
 
 
-        for(int b=i;b<=i1;b++)
-        {
-            if(!createDirectory(Integer.toString(b)))
-            {
+        for (int b = i; b <= i1; b++) {
+            if (!createDirectory(Integer.toString(b))) {
                 return false;
             }
         }
@@ -368,10 +362,8 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean createDirectory(String s, int i, int i1) throws FileAlreadyExistsException {
 
 
-        for(int b=i;b<=i1;b++)
-        {
-            if(!createDirectory(s+b))
-            {
+        for (int b = i; b <= i1; b++) {
+            if (!createDirectory(s + b)) {
                 return false;
             }
         }
@@ -384,8 +376,8 @@ public class GoogleDriveStorage extends StorageCore {
         try {
 
             File fileMetadata = new File();
-            List<String> nizs= List.of(s.split("\\\\"));
-            fileMetadata.setName(nizs.get(nizs.size()-1));
+            List<String> nizs = List.of(s.split("\\\\"));
+            fileMetadata.setName(nizs.get(nizs.size() - 1));
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             java.io.File filePath = new java.io.File(s);
             FileContent mediaContent = new FileContent("application/octet-stream", filePath);
@@ -398,8 +390,8 @@ public class GoogleDriveStorage extends StorageCore {
 
         } catch (IOException e) {
 
-        e.printStackTrace();
-    }
+            e.printStackTrace();
+        }
         return false;
     }
 
@@ -413,14 +405,14 @@ public class GoogleDriveStorage extends StorageCore {
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
-            File file =service.files().create(fileMetadata)
+            File file = service.files().create(fileMetadata)
                     .setFields("id")
                     .execute();
             System.out.println("File ID: " + file.getId());
             //file.getId();
 
-      //     getFileCountLimits().put(file.getId(),i);
-       //    updateConfig();
+            //     getFileCountLimits().put(file.getId(),i);
+            //    updateConfig();
 
         } catch (IOException e) {
 
@@ -492,7 +484,7 @@ public class GoogleDriveStorage extends StorageCore {
             List<File> files = result.getFiles();
             if (files != null && !files.isEmpty()) {
                 files.get(0).setName(s1);
-                service.files().update(convertNameToId(s),files.get(0))
+                service.files().update(convertNameToId(s), files.get(0))
                         .setFields("id")
                         .execute();
 
@@ -508,15 +500,15 @@ public class GoogleDriveStorage extends StorageCore {
     public List<String> searchByName(String s) {
 
         FileList result = null;
-        List<String> lista=new ArrayList<>();
+        List<String> lista = new ArrayList<>();
         try {
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
                     .setQ("name = '" + s + "'")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
-                lista.add(file.getName()+" "+file.getId());
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
             }
 
         } catch (IOException e) {
@@ -529,16 +521,16 @@ public class GoogleDriveStorage extends StorageCore {
     public List<String> searchByExtension(String s) {
 
         FileList result = null;
-        List<String> lista=new ArrayList<>();
+        List<String> lista = new ArrayList<>();
         try {
 
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("fullText contains '"+s+"'")
+                    .setQ("fullText contains '" + s + "'")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
-                lista.add(file.getName()+" "+file.getId());
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
             }
 
         } catch (IOException e) {
@@ -553,16 +545,16 @@ public class GoogleDriveStorage extends StorageCore {
     public List<String> searchByModifiedAfter(Date date) {
 
         FileList result = null;
-        List<String> lista=new ArrayList<>();
+        List<String> lista = new ArrayList<>();
         try {
 
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("\tmodifiedTime > '"+date+"'")
+                    .setQ("\tmodifiedTime > '" + date + "'")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
-                lista.add(file.getName()+" "+file.getId());
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
             }
 
         } catch (IOException e) {
@@ -584,15 +576,15 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public List<String> searchAll() {
         FileList result = null;
-        List<String> lista=new ArrayList<>();
+        List<String> lista = new ArrayList<>();
         try {
 
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
-                lista.add(file.getName()+" "+file.getId());
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
             }
 
         } catch (IOException e) {
@@ -604,32 +596,22 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public List<String> searchByPartOfName(String s) {
         FileList result = null;
-        List<String> lista=new ArrayList<>();
+        List<String> lista = new ArrayList<>();
         try {
 
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("fullText contains '"+s+"'")
+                    .setQ("fullText contains '" + s + "'")
                     .execute();
             List<File> files = result.getFiles();
-            for(File file:files) {
-                lista.add(file.getName()+" "+file.getId());
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
         return lista;
-    }
-
-    @Override
-    public List<String> sortResults(List<String> list, SortType sortType, OrderType orderType) {
-        return null;
-    }
-
-    @Override
-    public List<String> filterResults(List<String> list, List<FilterType> list1) {
-        return null;
     }
 
     @Override
@@ -642,8 +624,7 @@ public class GoogleDriveStorage extends StorageCore {
 
     }
 
-    public String convertNameToId(String s)
-    {
+    public String convertNameToId(String s) {
         FileList result = null;
         try {
             result = service.files().list()
@@ -651,7 +632,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .setQ("name = '" + s + "'")
                     .execute();
             List<File> files = result.getFiles();
-            if (files != null && files.size()==1) {
+            if (files != null && files.size() == 1) {
 
                 //System.out.println(files.get(0).getId());
                 return files.get(0).getId();

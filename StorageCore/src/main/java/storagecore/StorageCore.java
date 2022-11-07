@@ -10,8 +10,12 @@ import storagecore.exceptions.BannedExtensionUploadException;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -311,24 +315,119 @@ public abstract class StorageCore {
      */
     public abstract List<String> searchByPartOfName(String substring);
 
+    private List<File> returnFileList(List<String> list) {
+        List<File> files = new ArrayList<>();
+        for (String path : list) {
+            File file = new File(path);
+            if (!file.exists()) {
+                continue;
+            }
+
+            files.add(file);
+        }
+
+        return files;
+    }
+
     /**
      * Sort the list of results
      *
-     * @param result    The results to sort
+     * @param list      The results to sort
      * @param sortType  The type to sort by
      * @param orderType The order to sort by
      * @return Sorted list of results
      */
-    public abstract List<String> sortResults(List<String> result, SortType sortType, OrderType orderType);
+    public List<String> sortResults(List<String> list, SortType sortType, OrderType orderType) {
+        List<File> files = returnFileList(list);
+
+        switch (sortType) {
+            case NAME -> files.sort((o1, o2) -> {
+                String f1 = o1.getName().substring(0, o1.getName().lastIndexOf("."));
+                String f2 = o2.getName().substring(0, o2.getName().lastIndexOf("."));
+                if (orderType == OrderType.ASCENDING) {
+                    return f1.compareTo(f2);
+                } else {
+                    return f2.compareTo(f1);
+                }
+            });
+            case EXTENSION -> files.sort((o1, o2) -> {
+                String f1 = o1.getName().substring(o1.getName().lastIndexOf("."));
+                String f2 = o2.getName().substring(o2.getName().lastIndexOf("."));
+                if (orderType == OrderType.ASCENDING) {
+                    return f1.compareTo(f2);
+                } else {
+                    return f2.compareTo(f1);
+                }
+            });
+            case CREATION_DATE -> files.sort((o1, o2) -> {
+                try {
+                    BasicFileAttributes fileAttributes1 = Files.readAttributes(o1.toPath(), BasicFileAttributes.class);
+                    BasicFileAttributes fileAttributes2 = Files.readAttributes(o2.toPath(), BasicFileAttributes.class);
+                    return fileAttributes1.creationTime().compareTo(fileAttributes2.creationTime());
+                } catch (IOException ignored) {
+
+                }
+                Date m1 = new Date(o1.lastModified());
+                Date m2 = new Date(o2.lastModified());
+                if (orderType == OrderType.ASCENDING) {
+                    return m1.compareTo(m2);
+                } else {
+                    return m2.compareTo(m1);
+                }
+            });
+            case MODIFY_DATE -> files.sort((o1, o2) -> {
+                Date m1 = new Date(o1.lastModified());
+                Date m2 = new Date(o2.lastModified());
+                if (orderType == OrderType.ASCENDING) {
+                    return m1.compareTo(m2);
+                } else {
+                    return m2.compareTo(m1);
+                }
+            });
+        }
+        List<String> result = new ArrayList<>();
+        for (File file : files) {
+            result.add(file.toPath().toString());
+        }
+
+        return result;
+    }
 
     /**
      * Filter the list of results before printing it
      *
-     * @param result      The results to filter
+     * @param list        The results to filter
      * @param filterTypes The list of values to keep
      * @return Filtered list of results
      */
-    public abstract List<String> filterResults(List<String> result, List<FilterType> filterTypes);
+    public List<String> filterResults(List<String> list, List<FilterType> filterTypes) {
+        List<File> files = returnFileList(list);
+
+        List<String> result = new ArrayList<>();
+        for (File file : files) {
+            StringBuilder row = new StringBuilder();
+            for (FilterType filterType : filterTypes) {
+                row.append(" ");
+                switch (filterType) {
+                    case NAME -> row.append(file.getName(), 0, file.getName().lastIndexOf("."));
+                    case EXTENSION -> row.append(file.getName().substring(file.getName().lastIndexOf(".")));
+                    case CREATION_DATE -> {
+                        try {
+                            BasicFileAttributes fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+                            row.append(fileAttributes.creationTime().toString());
+                        } catch (IOException ignored) {
+
+                        }
+                    }
+                    case MODIFY_DATE -> row.append(new Date(file.lastModified()));
+                }
+            }
+
+            result.add(row.toString().trim());
+        }
+
+        return result;
+    }
 
     /**
      * Check if the file would go over the allowed
