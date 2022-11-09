@@ -91,8 +91,8 @@ public abstract class StorageCore {
      *
      * @return The limit in bytes
      */
-    public int getMaxSizeLimit() {
-        return (Integer) readConfig(ConfigItem.MAX_SIZE_LIMIT);
+    public double getMaxSizeLimit() {
+        return (Double) readConfig(ConfigItem.MAX_SIZE_LIMIT);
     }
 
     /**
@@ -111,6 +111,16 @@ public abstract class StorageCore {
      */
     public HashMap getFileCountLimits() {
         return (HashMap) readConfig(ConfigItem.FILE_COUNT_LIMITS);
+    }
+
+    /**
+     * Update the maximum amount of files that can be in a directory
+     *
+     * @param fileCountLimits Updated version of the list
+     */
+    public void updateFileCountLimits(HashMap fileCountLimits) {
+        config.setFileCountLimits(fileCountLimits);
+        updateConfig();
     }
 
     /**
@@ -136,6 +146,13 @@ public abstract class StorageCore {
      */
     protected abstract Object readConfig(ConfigItem configItem);
 
+    /**
+     * Get a specific part of config
+     *
+     * @param json       The json object of the config
+     * @param configItem The item to search for
+     * @return An object that can be converted to a usable value
+     */
     protected Object getConfig(JSONObject json, ConfigItem configItem) {
         switch (configItem) {
             case BANNED_EXTENSIONS -> {
@@ -151,6 +168,15 @@ public abstract class StorageCore {
                 return null;
             }
         }
+    }
+
+    /**
+     * Set the config of the storage
+     *
+     * @param config The new config
+     */
+    public void setConfig(Config config) {
+        this.config = config;
     }
 
     /**

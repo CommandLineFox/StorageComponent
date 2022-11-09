@@ -2,20 +2,16 @@ package localstorage;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import storagecore.Config;
 import storagecore.StorageCore;
 import storagecore.StorageManager;
 import storagecore.enums.ConfigItem;
-import storagecore.enums.FilterType;
-import storagecore.enums.OrderType;
-import storagecore.enums.SortType;
-import storagecore.exceptions.BannedExtensionUploadException;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
 import java.io.*;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 public class LocalStorage extends StorageCore {
@@ -36,13 +32,25 @@ public class LocalStorage extends StorageCore {
     @Override
     public boolean checkConfig(String root) {
         File config = new File(root, "config.json");
-        return config.exists();
+        if (!config.exists()) {
+            return false;
+        }
+
+        setConfig(new Config(getMaxSizeLimit(), getBannedExtensions(), getFileCountLimits()));
+        return true;
     }
 
     @Override
     public boolean checkRoot(String root) {
         File file = new File(root);
-        return file.exists();
+        if (!file.exists()) {
+            return false;
+        }
+
+        setOriginalRoot(root);
+        setRoot(root);
+        return true;
+
     }
 
     @Override
@@ -74,7 +82,7 @@ public class LocalStorage extends StorageCore {
     protected Object readConfig(ConfigItem configItem) {
         try {
             JSONParser jsonParser = new JSONParser();
-            JSONObject json = (JSONObject) jsonParser.parse(new FileReader(getRoot() + "\\config.json"));
+            JSONObject json = (JSONObject) jsonParser.parse(new FileReader(getOriginalRoot() + "\\config.json"));
             return getConfig(json, configItem);
         } catch (Exception e) {
             e.printStackTrace();
@@ -96,7 +104,11 @@ public class LocalStorage extends StorageCore {
 
     @Override
     public boolean returnBackFromDirectory() {
-        String path = getRoot().substring(getRoot().lastIndexOf('\\'));
+        if (getOriginalRoot().equals(getRoot())) {
+            return false;
+        }
+
+        String path = getRoot().substring(0, getRoot().lastIndexOf('\\'));
         setRoot(path);
         return true;
     }
@@ -120,7 +132,7 @@ public class LocalStorage extends StorageCore {
         if (createDirectory(name)) {
             HashMap fileCountLimits = getFileCountLimits();
             fileCountLimits.put(getRoot() + "\\" + name, limit);
-            updateConfig();
+            updateFileCountLimits(fileCountLimits);
             return true;
         }
 
@@ -402,19 +414,12 @@ public class LocalStorage extends StorageCore {
     protected void checkFileCountLimit(String file) throws FileCountLimitReachedException {
         File root = new File(file);
 
-        if (root.list() == null) {
+        if (getFileCountLimits() == null || getFileCountLimits().get(root.toPath().toString()) == null || root.listFiles() == null) {
             return;
         }
 
-        if ((Integer) getFileCountLimits().get(root.toPath()) == root.list().length) {
+        if ((Integer) getFileCountLimits().get(root.toPath().toString()) == Objects.requireNonNull(root.listFiles()).length) {
             throw new FileCountLimitReachedException();
-        }
-    }
-
-    protected void checkBannedExtension(String name) throws BannedExtensionUploadException {
-        String extension = name.substring(name.lastIndexOf("." + 1)).trim();
-        if (getBannedExtensions().contains(extension)) {
-            throw new BannedExtensionUploadException();
         }
     }
 

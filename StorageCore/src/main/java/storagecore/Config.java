@@ -16,7 +16,7 @@ public class Config {
         fileCountLimits = new HashMap<>();
     }
 
-    public Config(int maxSizeLimit, List<String> bannedExtensions, Map<String, Integer> fileCountLimits) {
+    public Config(double maxSizeLimit, List<String> bannedExtensions, Map<String, Integer> fileCountLimits) {
         this.maxSizeLimit = maxSizeLimit;
         this.bannedExtensions = bannedExtensions;
         this.fileCountLimits = fileCountLimits;
