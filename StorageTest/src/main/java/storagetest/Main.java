@@ -292,7 +292,7 @@ public class Main {
                         }
                         String oldName = args[0];
                         String newName = args[1];
-                        if (storage.moveFileOrDirectory(oldName, newName)) {
+                        if (storage.renameFileOrDirectory(oldName, newName)) {
                             System.out.println("Successfully renamed " + oldName + " to " + newName);
                         } else {
                             System.out.println("Unable to rename the file or directory");
