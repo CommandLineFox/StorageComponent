@@ -80,7 +80,10 @@ public class Main {
                     System.out.println("Created a default configuration");
                     task = true;
                 }
-                default -> System.out.println("invalid option, valid options are 1 and 2");
+                default -> {
+                    System.out.println("invalid option, valid options are 1 and 2");
+                    option = input.nextLine().trim();
+                }
             }
         }
 
@@ -134,7 +137,7 @@ public class Main {
                             }
                         } else {
                             if (storage.enterDirectory(path)) {
-                                System.out.println("Successfully entered new directory as root");
+                                System.out.println("Successfully entered " + path);
                             } else {
                                 System.out.println("Unable to enter new directory");
                             }
@@ -157,7 +160,7 @@ public class Main {
 
                                     boolean success = storage.createDirectory(name);
                                     if (success) {
-                                        System.out.println("Successfully created the new directory");
+                                        System.out.println("Successfully created " + name);
                                     } else {
                                         System.out.println("Something went wrong when trying to create the new directory");
                                     }
@@ -173,7 +176,7 @@ public class Main {
 
                                     boolean success = storage.createDirectory(name, limit);
                                     if (success) {
-                                        System.out.println("Successfully created the new directory");
+                                        System.out.println("Successfully created " + name + " with limit " + limit);
                                     } else {
                                         System.out.println("Something went wrong when trying to create the new directory");
                                     }
@@ -215,7 +218,10 @@ public class Main {
 
                                     task = true;
                                 }
-                                default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3, and 4");
+                                default -> {
+                                    System.out.println("You've entered an invalid option, valid options are 1, 2, 3, and 4");
+                                    option = input.nextLine().trim();
+                                }
                             }
                         }
                     }
@@ -228,7 +234,7 @@ public class Main {
 
                         String name = args[0];
                         if (storage.deleteFileOrFolder(name)) {
-                            System.out.println("Successfully deleted the file or directory");
+                            System.out.println("Successfully deleted " + name);
                         } else {
                             System.out.println("Unable to delete the file or directory");
                         }
@@ -242,7 +248,7 @@ public class Main {
 
                         String name = args[0];
                         if (storage.addFile(name)) {
-                            System.out.println("Successfully added the file or directory to storage");
+                            System.out.println("Successfully uploaded " + name);
                         } else {
                             System.out.println("Unable to add the file or directory");
                         }
@@ -257,7 +263,7 @@ public class Main {
                         String name = args[0];
                         String path = args[1];
                         if (storage.downloadFileOrDirectory(name, path)) {
-                            System.out.println("Successfully downloaded the file or directory to local files");
+                            System.out.println("Successfully downloaded " + name + " to " + path);
                         } else {
                             System.out.println("Unable to download the file or directory");
                         }
@@ -272,7 +278,7 @@ public class Main {
                         String name = args[0];
                         String path = args[1];
                         if (storage.moveFileOrDirectory(name, path)) {
-                            System.out.println("Successfully moved the file or directory to a new location");
+                            System.out.println("Successfully moved " + name + " to " + path);
                         } else {
                             System.out.println("Unable to move the file or directory");
                         }
@@ -310,11 +316,18 @@ public class Main {
                                     result.addAll(storage.searchByModifiedAfter(date));
                                     task = true;
                                 }
-                                case "4" -> result.addAll(storage.searchAllFromRoot(storage.getRoot()));
-                                case "5" -> result.addAll(storage.searchAllFromRootWithoutRoot(storage.getRoot()));
+                                case "4" -> {
+                                    result.addAll(storage.searchAllFromRoot(storage.getRoot()));
+                                    task = true;
+                                }
+                                case "5" -> {
+                                    result.addAll(storage.searchAllFromRootWithoutRoot(storage.getRoot()));
+                                    task = true;
+                                }
                                 case "6" -> {
                                     result = storage.searchAllFromRoot(storage.getRoot());
                                     result.addAll(storage.searchAllFromRootWithoutRoot(storage.getRoot()));
+                                    task = true;
                                 }
                                 case "7" -> {
                                     System.out.println("Enter the substring to search with");
@@ -322,7 +335,10 @@ public class Main {
                                     result.addAll(storage.searchByPartOfName(substring));
                                     task = true;
                                 }
-                                default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3, 4, 5, 6 and 7");
+                                default -> {
+                                    System.out.println("You've entered an invalid option, valid options are 1, 2, 3, 4, 5, 6 and 7");
+                                    option = input.nextLine().trim();
+                                }
                             }
                         }
 
@@ -359,7 +375,10 @@ public class Main {
                                                 sortType = SortType.MODIFY_DATE;
                                                 subTask = true;
                                             }
-                                            default -> System.out.println("You've entered an invalid option, valid options are 1, 2, 3 and 4");
+                                            default -> {
+                                                System.out.println("You've entered an invalid option, valid options are 1, 2, 3 and 4");
+                                                sortingOption = input.nextLine();
+                                            }
                                         }
                                     }
 
@@ -378,7 +397,10 @@ public class Main {
                                                 orderType = OrderType.DESCENDING;
                                                 subTask = true;
                                             }
-                                            default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                            default -> {
+                                                System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                                orderOption = input.nextLine();
+                                            }
                                         }
                                     }
 
@@ -386,7 +408,10 @@ public class Main {
                                     task = true;
                                 }
                                 case "2" -> task = true;
-                                default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                default -> {
+                                    System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                    sorting = input.nextLine();
+                                }
                             }
                         }
 
@@ -437,7 +462,10 @@ public class Main {
                                     task = true;
                                 }
                                 case "2" -> task = true;
-                                default -> System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                default -> {
+                                    System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                    filtering = input.nextLine();
+                                }
                             }
                         }
 
@@ -461,8 +489,7 @@ public class Main {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
-                //System.out.println(e.getMessage());
+                System.out.println(e.getMessage());
             }
 
             line = input.nextLine();
