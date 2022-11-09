@@ -402,6 +402,10 @@ public class LocalStorage extends StorageCore {
     protected void checkFileCountLimit(String file) throws FileCountLimitReachedException {
         File root = new File(file);
 
+        if (root.list() == null) {
+            return;
+        }
+
         if ((Integer) getFileCountLimits().get(root.toPath()) == root.list().length) {
             throw new FileCountLimitReachedException();
         }

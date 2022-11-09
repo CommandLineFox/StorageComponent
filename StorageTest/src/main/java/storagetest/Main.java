@@ -65,7 +65,7 @@ public class Main {
             switch (option) {
                 case "1" -> {
                     System.out.println("Enter the max size the storage would be");
-                    double maxSizeLimit = input.nextDouble();
+                    double maxSizeLimit = Double.parseDouble(input.nextLine());
 
                     System.out.println("Enter a list of banned extensions separated by commas");
                     String[] extensions = input.nextLine().split(",");
@@ -91,7 +91,7 @@ public class Main {
     }
 
     public static String getCommand(String input) {
-        String[] split = input.split("/\s/");
+        String[] split = input.split(" ");
         if (split.length == 0) {
             System.out.println("Couldn't find a command");
             return null;
@@ -100,7 +100,7 @@ public class Main {
     }
 
     public static String[] getArguments(String input) {
-        String[] split = input.split("/\s/");
+        String[] split = input.split(" ");
         List<String> arguments = new ArrayList<>(Arrays.asList(split).subList(1, split.length));
         String[] args = new String[arguments.size()];
         for (int i = 0; i < args.length; i++) {
@@ -447,6 +447,18 @@ public class Main {
                     for (String found : result) {
                         System.out.println(found);
                     }
+                }
+                case "help" -> {
+                    System.out.println("Here's the list of all available commands:");
+                    System.out.println("cd <dir>           - Enters a subdirectory if it exists");
+                    System.out.println("cd ..              - Returns to parent directory");
+                    System.out.println("create             - Displays a menu for creating a new directory");
+                    System.out.println("delete <file name> - Deletes a file from current directory if it exists");
+                    System.out.println("upload <path>      - Uploads a file from specified path to storage");
+                    System.out.println("upload <path>      - Uploads a file from specified path to storage");
+                    System.out.println("move <name> <path> - Moves a specified file to a new location");
+                    System.out.println("search             - Displays a menu for searching through the storage");
+
                 }
                 default -> System.out.println("Invalid command, please see \"help\" for a list of valid commands");
             }
