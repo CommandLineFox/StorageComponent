@@ -83,7 +83,7 @@ public class GoogleDriveStorage extends StorageCore {
 
     private static final List<String> SCOPES =
             Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY);
-    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
+    private static final String CREDENTIALS_FILE_PATH = "/client_secret.json";
 
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
             throws IOException {
@@ -98,7 +98,7 @@ public class GoogleDriveStorage extends StorageCore {
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("/client_secret.json")))
                 .setAccessType("offline")
                 .build();
         LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
@@ -107,39 +107,7 @@ public class GoogleDriveStorage extends StorageCore {
         return credential;
     }
 
-    /*
-        public static Credential authorize() throws IOException {
-            // Load client secrets.
-            InputStream in = GoogleDriveStorage.class.getResourceAsStream("/client_secret.json");
 
-            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-
-            // Build flow and trigger user authorization request.
-            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES).setAccessType("offline").build();
-
-            Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("noviuser1");
-            return credential;
-        }
-
-        /**
-         * Build and return an authorized Calendar client service.
-         *
-         * @return an authorized Calendar client service
-         * @throws IOException
-
-        public static Drive getDriveService() throws IOException {
-            try {
-
-                Drive service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
-                        .setApplicationName(APPLICATION_NAME)
-                        .build();
-            } catch (GeneralSecurityException e) {
-                e.printStackTrace();
-            }
-                //credential.setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
-            return new Drive.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential).setApplicationName(APPLICATION_NAME).build();
-        }
-    */
     //Kod za pretragu
     public static void main(String[] args) throws IOException {
 
@@ -405,14 +373,9 @@ public class GoogleDriveStorage extends StorageCore {
             fileMetadata.setParents(Collections.singletonList(getRoot()));
             fileMetadata.setMimeType("application/vnd.google-apps.folder");
 
-            File file = service.files().create(fileMetadata)
+            service.files().delete(convertNameToId(s))
                     .setFields("id")
                     .execute();
-            System.out.println("File ID: " + file.getId());
-            //file.getId();
-
-            //     getFileCountLimits().put(file.getId(),i);
-            //    updateConfig();
 
         } catch (IOException e) {
 

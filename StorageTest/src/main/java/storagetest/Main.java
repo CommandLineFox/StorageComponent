@@ -277,6 +277,22 @@ public class Main {
                             System.out.println("Unable to move the file or directory");
                         }
                     }
+
+                    case "rename" -> {
+                             String[] args = getArguments(line);
+                        if (args.length != 2) {
+                            System.out.println("Expected 2 arguments, got " + args.length);
+                            break;
+                        }
+                        String oldname = args[0];
+                        String newname = args[1];
+                        if (storage.moveFileOrDirectory(oldname, newname)) {
+                            System.out.println("Successfully renamed the file or directory");
+                        } else {
+                            System.out.println("Unable to rename the file or directory");
+                        }
+
+                            }
                     case "search" -> {
                         List<String> result = new ArrayList<>();
                         System.out.println("What would you like to search by?");
