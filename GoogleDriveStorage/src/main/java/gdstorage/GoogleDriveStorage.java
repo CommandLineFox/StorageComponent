@@ -112,27 +112,9 @@ public class GoogleDriveStorage extends StorageCore {
     public static void main(String[] args) throws IOException {
 
 
-        try {
-
-            Drive service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
-                    .setApplicationName(APPLICATION_NAME)
-                    .build();
-
-            File fileMetadata = new File();
-            fileMetadata.setName("Ime");
-            // fileMetadata.setParents(Collections.singletonList(getRoot()));
-            fileMetadata.setMimeType("application/vnd.google-apps.folder");
-
-            File file = service.files().create(fileMetadata)
-                    .setFields("id")
-                    .execute();
-            // System.out.println("File ID: " + file.getId());
-            //file.getId();
-
-
-        } catch (GeneralSecurityException generalSecurityException) {
-            generalSecurityException.printStackTrace();
-        }
+        GoogleDriveStorage googleDriveStorage=new GoogleDriveStorage();
+        googleDriveStorage.createDirectory("Jojs");
+        googleDriveStorage.renameFileOrDirectory("Boba5","5");
     }
 
 
@@ -354,7 +336,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .execute();
             System.out.println("File ID: " + file.getId());
             //file.getId();
-
+            return true;
 
         } catch (IOException e) {
 
@@ -377,6 +359,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .setFields("id")
                     .execute();
 
+            return true;
         } catch (IOException e) {
 
             e.printStackTrace();
@@ -390,6 +373,7 @@ public class GoogleDriveStorage extends StorageCore {
 
         File file = null;
         try {
+            System.out.println(convertNameToId(s));
             file = service.files().get(convertNameToId(s))
                     .setFields("parents")
                     .execute();
@@ -402,8 +386,12 @@ public class GoogleDriveStorage extends StorageCore {
             previousParents.append(',');
         }
         // Move the file to the new folder
+        System.out.println(convertNameToId(s1));
+        System.out.println("MHM");
+        System.out.println(previousParents);
         try {
-            file = service.files().update(s, null)
+
+           file = service.files().update(s, null)
                     .setAddParents(convertNameToId(s1))
                     .setRemoveParents(previousParents.toString())
                     .setFields("id, parents")
@@ -422,13 +410,13 @@ public class GoogleDriveStorage extends StorageCore {
 
             OutputStream outputStream = new ByteArrayOutputStream();
 
-            service.files().get(s).executeMediaAndDownloadTo(outputStream);
-            java.io.File f = new java.io.File(s);
+            service.files().get(convertNameToId(s)).executeMediaAndDownloadTo(outputStream);
+            java.io.File f = new java.io.File(s1+"\\"+s);
             FileWriter fileWriter = new FileWriter(f.getPath());
             fileWriter.write(String.valueOf(outputStream));
             fileWriter.close();
             outputStream.close();
-
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -440,6 +428,10 @@ public class GoogleDriveStorage extends StorageCore {
 
         FileList result = null;
         try {
+            service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+
             result = service.files().list()
                     .setFields("nextPageToken, files(id, name)")
                     .setQ("name = '" + s + "'")
@@ -447,14 +439,14 @@ public class GoogleDriveStorage extends StorageCore {
             List<File> files = result.getFiles();
             if (files != null && !files.isEmpty()) {
                 files.get(0).setName(s1);
-                service.files().update(convertNameToId(s), files.get(0))
+                service.files().update(files.get(0).getId(), files.get(0))
                         .setFields("id")
                         .execute();
 
             }
 
 
-        } catch (IOException e) {
+        } catch (IOException | GeneralSecurityException e) {
             e.printStackTrace();
         }
         return false;
