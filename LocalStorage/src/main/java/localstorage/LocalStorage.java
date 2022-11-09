@@ -200,7 +200,7 @@ public class LocalStorage extends StorageCore {
     @Override
     public boolean moveFileOrDirectory(String name, String path) throws FileNotFoundException, FileAlreadyExistsException, FileCountLimitReachedException {
         File original = new File(getRoot(), name);
-        File root = new File(path, name);
+        File root = new File(getOriginalRoot() + "\\" + path, name);
 
         if (!original.exists()) {
             throw new FileNotFoundException("Couldn't find the file or directory you're looking for");
@@ -418,7 +418,7 @@ public class LocalStorage extends StorageCore {
             return;
         }
 
-        if ((Integer) getFileCountLimits().get(root.toPath().toString()) == Objects.requireNonNull(root.listFiles()).length) {
+        if ((Long) getFileCountLimits().get(root.toPath().toString()) == Objects.requireNonNull(root.listFiles()).length) {
             throw new FileCountLimitReachedException();
         }
     }
