@@ -285,21 +285,21 @@ public class Main {
                     }
 
                     case "rename" -> {
-                             String[] args = getArguments(line);
+                        String[] args = getArguments(line);
                         if (args.length != 2) {
                             System.out.println("Expected 2 arguments, got " + args.length);
                             break;
                         }
-                        String oldname = args[0];
-                        String newname = args[1];
-                        if (storage.moveFileOrDirectory(oldname, newname)) {
-                            System.out.println("Successfully renamed the file or directory");
+                        String oldName = args[0];
+                        String newName = args[1];
+                        if (storage.moveFileOrDirectory(oldName, newName)) {
+                            System.out.println("Successfully renamed " + oldName + " to " + newName);
                         } else {
                             System.out.println("Unable to rename the file or directory");
 
                         }
 
-                            }
+                    }
                     case "search" -> {
                         List<String> result = new ArrayList<>();
                         System.out.println("What would you like to search by?");
@@ -492,14 +492,14 @@ public class Main {
                     }
                     case "help" -> {
                         System.out.println("Here's the list of all available commands:");
-                        System.out.println("cd <dir>           - Enters a subdirectory if it exists");
-                        System.out.println("cd ..              - Returns to parent directory");
-                        System.out.println("create             - Displays a menu for creating a new directory");
-                        System.out.println("delete <file name> - Deletes a file from current directory if it exists");
-                        System.out.println("upload <path>      - Uploads a file from specified path to storage");
-                        System.out.println("upload <path>      - Uploads a file from specified path to storage");
-                        System.out.println("move <name> <path> - Moves a specified file to a new location");
-                        System.out.println("search             - Displays a menu for searching through the storage");
+                        System.out.println("cd <dir>                 - Enters a subdirectory if it exists");
+                        System.out.println("cd ..                    - Returns to parent directory");
+                        System.out.println("create                   - Displays a menu for creating a new directory");
+                        System.out.println("delete <file name>       - Deletes a file from current directory if it exists");
+                        System.out.println("upload <path>            - Uploads a file from specified path to storage");
+                        System.out.println("move <name> <path>       - Moves a specified file to a new location");
+                        System.out.println("rename <name> <new name> - Renames a file or directory");
+                        System.out.println("search                   - Displays a menu for searching through the storage");
 
                     }
                     default -> System.out.println("Invalid command, please see \"help\" for a list of valid commands");
