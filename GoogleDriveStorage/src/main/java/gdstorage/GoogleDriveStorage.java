@@ -55,7 +55,6 @@ public class GoogleDriveStorage extends StorageCore {
     private static HttpTransport HTTP_TRANSPORT;
 
 
-    private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
     /**
      * Global instance of the scopes required by this quickstart.
@@ -83,6 +82,7 @@ public class GoogleDriveStorage extends StorageCore {
 
     private static final List<String> SCOPES =
             Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY);
+
     private static final String CREDENTIALS_FILE_PATH = "/cs.json";
 
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
@@ -98,11 +98,11 @@ public class GoogleDriveStorage extends StorageCore {
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("/cs.json")))
-                .setAccessType("online")
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("tokens")))
+                .setAccessType("offline")
                 .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8889).build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user27");
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
+        Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user45");
         //returns an authorized Credential object.
         return credential;
     }
@@ -112,9 +112,29 @@ public class GoogleDriveStorage extends StorageCore {
     public static void main(String[] args) throws IOException {
 
 
-        GoogleDriveStorage googleDriveStorage=new GoogleDriveStorage();
-        googleDriveStorage.createDirectory("Jojs");
-        googleDriveStorage.renameFileOrDirectory("Boba5","5");
+        try {
+
+            File fileMetadata = new File();
+            fileMetadata.setName("jooj");
+            fileMetadata.setParents(Collections.singletonList("1amNRP4XaNWzV_Dw36tC-Mvyo42EaSqkE"));
+            fileMetadata.setMimeType("application/vnd.google-apps.folder");
+
+            Drive service = new Drive.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, getCredentials(GoogleNetHttpTransport.newTrustedTransport()))
+                    .setApplicationName(APPLICATION_NAME)
+                    .build();
+            File file = service.files().create(fileMetadata)
+                    .setFields("id")
+                    .execute();
+            // System.out.println("File ID: " + file.getId());
+            //file.getId();
+
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        } catch (GeneralSecurityException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 
