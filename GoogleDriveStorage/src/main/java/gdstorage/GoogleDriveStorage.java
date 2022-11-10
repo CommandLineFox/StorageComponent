@@ -83,7 +83,7 @@ public class GoogleDriveStorage extends StorageCore {
 
     private static final List<String> SCOPES =
             Collections.singletonList(DriveScopes.DRIVE_METADATA_READONLY);
-    private static final String CREDENTIALS_FILE_PATH = "/client_secret.json";
+    private static final String CREDENTIALS_FILE_PATH = "/cs.json";
 
     private static Credential getCredentials(final NetHttpTransport HTTP_TRANSPORT)
             throws IOException {
@@ -98,11 +98,11 @@ public class GoogleDriveStorage extends StorageCore {
         // Build flow and trigger user authorization request.
         GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
-                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("/client_secret.json")))
-                .setAccessType("offline")
+                .setDataStoreFactory(new FileDataStoreFactory(new java.io.File("/cs.json")))
+                .setAccessType("online")
                 .build();
-        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8888).build();
-        Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user");
+        LocalServerReceiver receiver = new LocalServerReceiver.Builder().setPort(8889).build();
+        Credential credential = new AuthorizationCodeInstalledApp(flow, receiver).authorize("user27");
         //returns an authorized Credential object.
         return credential;
     }
@@ -386,9 +386,7 @@ public class GoogleDriveStorage extends StorageCore {
             previousParents.append(',');
         }
         // Move the file to the new folder
-        System.out.println(convertNameToId(s1));
-        System.out.println("MHM");
-        System.out.println(previousParents);
+
         try {
 
            file = service.files().update(s, null)
