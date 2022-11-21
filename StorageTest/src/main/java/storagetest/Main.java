@@ -359,79 +359,86 @@ public class Main {
                             }
                         }
 
-                        System.out.println("Would you like to sort your results");
-                        System.out.println("1 - Yes");
-                        System.out.println("2 - No");
-                        String sorting = input.nextLine();
+                        if (result.size() == 0) {
+                            System.out.println("No results found");
+                            break;
+                        }
 
-                        task = false;
-                        while (!task) {
-                            switch (sorting) {
-                                case "1" -> {
-                                    System.out.println("Please choose what to sort by");
-                                    System.out.println("1 - Name");
-                                    System.out.println("2 - Extension");
-                                    System.out.println("3 - Creation date");
-                                    System.out.println("4 - Last modified date");
-                                    String sortingOption = input.nextLine();
-                                    SortType sortType = SortType.NAME;
+                        if (result.size() > 1) {
+                            System.out.println("Would you like to sort your results");
+                            System.out.println("1 - Yes");
+                            System.out.println("2 - No");
+                            String sorting = input.nextLine();
 
-                                    boolean subTask = false;
-                                    while (!subTask) {
-                                        switch (sortingOption) {
-                                            case "1" -> subTask = true;
-                                            case "2" -> {
-                                                sortType = SortType.EXTENSION;
-                                                subTask = true;
-                                            }
-                                            case "3" -> {
-                                                sortType = SortType.CREATION_DATE;
-                                                subTask = true;
-                                            }
-                                            case "4" -> {
-                                                sortType = SortType.MODIFY_DATE;
-                                                subTask = true;
-                                            }
-                                            default -> {
-                                                System.out.println("You've entered an invalid option, valid options are 1, 2, 3 and 4");
-                                                sortingOption = input.nextLine();
-                                            }
-                                        }
-                                    }
+                            task = false;
+                            while (!task) {
+                                switch (sorting) {
+                                    case "1" -> {
+                                        System.out.println("Please choose what to sort by");
+                                        System.out.println("1 - Name");
+                                        System.out.println("2 - Extension");
+                                        System.out.println("3 - Creation date");
+                                        System.out.println("4 - Last modified date");
+                                        String sortingOption = input.nextLine();
+                                        SortType sortType = SortType.NAME;
 
-
-                                    System.out.println("Please choose what order to sort in");
-                                    System.out.println("1 - Ascending");
-                                    System.out.println("2 - Descending");
-                                    String orderOption = input.nextLine();
-                                    OrderType orderType = OrderType.ASCENDING;
-
-                                    subTask = false;
-                                    while (!subTask) {
-                                        switch (orderOption) {
-                                            case "1" -> subTask = true;
-                                            case "2" -> {
-                                                orderType = OrderType.DESCENDING;
-                                                subTask = true;
-                                            }
-                                            default -> {
-                                                System.out.println("You've entered an invalid option, valid options are 1 and 2");
-                                                orderOption = input.nextLine();
+                                        boolean subTask = false;
+                                        while (!subTask) {
+                                            switch (sortingOption) {
+                                                case "1" -> subTask = true;
+                                                case "2" -> {
+                                                    sortType = SortType.EXTENSION;
+                                                    subTask = true;
+                                                }
+                                                case "3" -> {
+                                                    sortType = SortType.CREATION_DATE;
+                                                    subTask = true;
+                                                }
+                                                case "4" -> {
+                                                    sortType = SortType.MODIFY_DATE;
+                                                    subTask = true;
+                                                }
+                                                default -> {
+                                                    System.out.println("You've entered an invalid option, valid options are 1, 2, 3 and 4");
+                                                    sortingOption = input.nextLine();
+                                                }
                                             }
                                         }
-                                    }
 
-                                    result = storage.sortResults(result, sortType, orderType);
-                                    task = true;
-                                }
-                                case "2" -> task = true;
-                                default -> {
-                                    System.out.println("You've entered an invalid option, valid options are 1 and 2");
-                                    sorting = input.nextLine();
+
+                                        System.out.println("Please choose what order to sort in");
+                                        System.out.println("1 - Ascending");
+                                        System.out.println("2 - Descending");
+                                        String orderOption = input.nextLine();
+                                        OrderType orderType = OrderType.ASCENDING;
+
+                                        subTask = false;
+                                        while (!subTask) {
+                                            switch (orderOption) {
+                                                case "1" -> subTask = true;
+                                                case "2" -> {
+                                                    orderType = OrderType.DESCENDING;
+                                                    subTask = true;
+                                                }
+                                                default -> {
+                                                    System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                                    orderOption = input.nextLine();
+                                                }
+                                            }
+                                        }
+
+                                        System.out.println("aloha");
+                                        result = storage.sortResults(result, sortType, orderType);
+                                        task = true;
+                                    }
+                                    case "2" -> task = true;
+                                    default -> {
+                                        System.out.println("You've entered an invalid option, valid options are 1 and 2");
+                                        sorting = input.nextLine();
+                                    }
                                 }
                             }
                         }
-
 
                         System.out.println("Would you like to filter your results");
                         System.out.println("1 - Yes");
@@ -447,8 +454,7 @@ public class Main {
                                     System.out.println("2 - File extension");
                                     System.out.println("3 - File creation date");
                                     System.out.println("4 - File's last modified date");
-                                    System.out.println("5 - Finish selection");
-                                    String[] filteringOptions = input.nextLine().split("/\s/");
+                                    String[] filteringOptions = input.nextLine().split(" ");
                                     List<FilterType> filterTypes = new ArrayList<>();
                                     for (String filterOption : filteringOptions) {
                                         switch (filterOption) {
@@ -487,7 +493,7 @@ public class Main {
                         }
 
                         for (String found : result) {
-                            System.out.println(found);
+                           System.out.println(found);
                         }
                     }
                     case "help" -> {

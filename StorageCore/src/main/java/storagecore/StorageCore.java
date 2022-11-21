@@ -7,6 +7,7 @@ import storagecore.enums.FilterType;
 import storagecore.enums.OrderType;
 import storagecore.enums.SortType;
 import storagecore.exceptions.BannedExtensionUploadException;
+import storagecore.exceptions.FileCountLimitMultipleFilesBreachedException;
 import storagecore.exceptions.FileCountLimitReachedException;
 import storagecore.exceptions.MaxSizeLimitBreachedException;
 
@@ -16,10 +17,11 @@ import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+import static storagecore.enums.FilterType.MODIFY_DATE;
 
 public abstract class StorageCore {
     private String root;
@@ -341,19 +343,7 @@ public abstract class StorageCore {
      */
     public abstract List<String> searchByPartOfName(String substring);
 
-    private List<File> returnFileList(List<String> list) {
-        List<File> files = new ArrayList<>();
-        for (String path : list) {
-            File file = new File(path);
-            if (!file.exists()) {
-                continue;
-            }
-
-            files.add(file);
-        }
-
-        return files;
-    }
+    public abstract List<PrintableFile> returnFileList(List<String> list);
 
     /**
      * Sort the list of results
@@ -364,56 +354,41 @@ public abstract class StorageCore {
      * @return Sorted list of results
      */
     public List<String> sortResults(List<String> list, SortType sortType, OrderType orderType) {
-        List<File> files = returnFileList(list);
+        List<PrintableFile> files = returnFileList(list);
 
         switch (sortType) {
             case NAME -> files.sort((o1, o2) -> {
-                String f1 = o1.getName().substring(0, o1.getName().lastIndexOf("."));
-                String f2 = o2.getName().substring(0, o2.getName().lastIndexOf("."));
                 if (orderType == OrderType.ASCENDING) {
-                    return f1.compareTo(f2);
+                    return o1.getName().compareTo(o2.getName());
                 } else {
-                    return f2.compareTo(f1);
+                    return o2.getName().compareTo(o1.getName());
                 }
             });
             case EXTENSION -> files.sort((o1, o2) -> {
-                String f1 = o1.getName().substring(o1.getName().lastIndexOf("."));
-                String f2 = o2.getName().substring(o2.getName().lastIndexOf("."));
                 if (orderType == OrderType.ASCENDING) {
-                    return f1.compareTo(f2);
+                    return o1.getExtension().compareTo(o2.getExtension());
                 } else {
-                    return f2.compareTo(f1);
+                    return o2.getExtension().compareTo(o1.getExtension());
                 }
             });
             case CREATION_DATE -> files.sort((o1, o2) -> {
-                try {
-                    BasicFileAttributes fileAttributes1 = Files.readAttributes(o1.toPath(), BasicFileAttributes.class);
-                    BasicFileAttributes fileAttributes2 = Files.readAttributes(o2.toPath(), BasicFileAttributes.class);
-                    return fileAttributes1.creationTime().compareTo(fileAttributes2.creationTime());
-                } catch (IOException ignored) {
-
-                }
-                Date m1 = new Date(o1.lastModified());
-                Date m2 = new Date(o2.lastModified());
                 if (orderType == OrderType.ASCENDING) {
-                    return m1.compareTo(m2);
+                    return o1.getCreatedAt().compareTo(o2.getCreatedAt());
                 } else {
-                    return m2.compareTo(m1);
+                    return o2.getCreatedAt().compareTo(o1.getCreatedAt());
                 }
             });
             case MODIFY_DATE -> files.sort((o1, o2) -> {
-                Date m1 = new Date(o1.lastModified());
-                Date m2 = new Date(o2.lastModified());
                 if (orderType == OrderType.ASCENDING) {
-                    return m1.compareTo(m2);
+                    return o1.getLastModifiedAt().compareTo(o2.getLastModifiedAt());
                 } else {
-                    return m2.compareTo(m1);
+                    return o2.getLastModifiedAt().compareTo(o1.getLastModifiedAt());
                 }
             });
         }
         List<String> result = new ArrayList<>();
-        for (File file : files) {
-            result.add(file.toPath().toString());
+        for (PrintableFile file : files) {
+            result.add(file.getPath());
         }
 
         return result;
@@ -427,28 +402,25 @@ public abstract class StorageCore {
      * @return Filtered list of results
      */
     public List<String> filterResults(List<String> list, List<FilterType> filterTypes) {
-        List<File> files = returnFileList(list);
+        List<PrintableFile> files = returnFileList(list);
 
+        DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd");
         List<String> result = new ArrayList<>();
-        for (File file : files) {
+        for (PrintableFile file : files) {
+            if (Objects.equals(file.getPath(), getRoot() + "\\config.json")) {
+                continue;
+            }
+
             StringBuilder row = new StringBuilder();
             for (FilterType filterType : filterTypes) {
                 row.append(" ");
                 switch (filterType) {
-                    case NAME -> row.append(file.getName(), 0, file.getName().lastIndexOf("."));
-                    case EXTENSION -> row.append(file.getName().substring(file.getName().lastIndexOf(".")));
-                    case CREATION_DATE -> {
-                        try {
-                            BasicFileAttributes fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-                            row.append(fileAttributes.creationTime().toString());
-                        } catch (IOException ignored) {
-
-                        }
-                    }
-                    case MODIFY_DATE -> row.append(new Date(file.lastModified()));
+                    case NAME -> row.append(file.getName());
+                    case EXTENSION -> row.append(file.getExtension());
+                    case CREATION_DATE -> row.append(dateFormat.format(file.getCreatedAt()));
+                    case MODIFY_DATE -> row.append(dateFormat.format(file.getLastModifiedAt()));
                 }
             }
-
             result.add(row.toString().trim());
         }
 
@@ -456,12 +428,21 @@ public abstract class StorageCore {
     }
 
     /**
-     * Check if the file would go over the allowed
+     * Check if the file would go over the allowed limit
      *
      * @param root The directory that's being checked
      * @throws FileCountLimitReachedException If the directory is full
      */
     protected abstract void checkFileCountLimit(String root) throws FileCountLimitReachedException;
+
+    /**
+     * Check if the new files would go over the allowed limit
+     *
+     * @param root  The directory that's being checked
+     * @param count The amount of new files being added
+     * @throws FileCountLimitMultipleFilesBreachedException If the directory would be full
+     */
+    protected abstract void checkMultipleFileCountLimit(String root, int count) throws FileCountLimitMultipleFilesBreachedException;
 
     /**
      * Check if an extension is in the list of banned extensions
