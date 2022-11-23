@@ -505,6 +505,7 @@ public class Main {
                         System.out.println("upload <path>            - Uploads a file from specified path to storage");
                         System.out.println("move <name> <path>       - Moves a specified file to a new location");
                         System.out.println("rename <name> <new name> - Renames a file or directory");
+                        System.out.println("download <file name> <path> - Download a file or directory");
                         System.out.println("search                   - Displays a menu for searching through the storage");
 
                     }
