@@ -8,13 +8,17 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.DateTime;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import storagecore.Config;
 import storagecore.PrintableFile;
 import storagecore.StorageCore;
 import storagecore.StorageManager;
@@ -28,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.GeneralSecurityException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class GoogleDriveStorage extends StorageCore {
@@ -101,13 +105,8 @@ public class GoogleDriveStorage extends StorageCore {
 
 
 
+    private String glavni_root;
 
-    //Kod za pretragu
-    public static void main(String[] args) throws IOException {
-
-
-
-    }
 
 
 
@@ -118,10 +117,11 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("name = '" + "config.json" + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("name = '" + "config.json" + "' AND '" +glavni_root+ "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
+                setConfig(new Config(getMaxSizeLimit(), getBannedExtensions(), getFileCountLimits()));
                 return true;
               /*  if(file.getParents().contains(getRoot()))
                 {
@@ -157,6 +157,7 @@ public class GoogleDriveStorage extends StorageCore {
             for (File file : files) {
                 if (s.equals(file.getId())) {
                     setRoot(file.getId());
+                    glavni_root=file.getId();
                     return true;
                 }
             }
@@ -179,7 +180,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .execute();
             System.out.println("File ID: " + file.getId());
             setRoot(file.getId());
-
+            glavni_root=file.getId();
             return true;
         } catch (IOException e) {
 
@@ -188,6 +189,9 @@ public class GoogleDriveStorage extends StorageCore {
         return false;
     }
 
+    public static void main(String[] args) {
+
+    }
     @Override
     protected void updateConfig() {
         try {
@@ -197,9 +201,27 @@ public class GoogleDriveStorage extends StorageCore {
             Path tempor = Files.createTempFile("config", ".json");
             Files.write(tempor, json.getBytes(StandardCharsets.UTF_8));
             fileMetadata.setName("config.json");
-            fileMetadata.setParents(Collections.singletonList(getRoot()));
+            fileMetadata.setParents(Collections.singletonList(glavni_root));
             fileMetadata.setMimeType("application/json");
             FileContent mediaContent = new FileContent("application/json", tempor.toFile());
+
+
+
+            if(checkConfig(glavni_root))
+            {
+                try {
+
+                    getDriveService().files().delete(convertNameToId("config.json"))
+                            .setFields("id")
+                            .execute();
+
+
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+                }
+            }
+
             File file = getDriveService().files().create(fileMetadata, mediaContent).setFields("id").execute();
             System.out.println("File ID: " + file.getId());
             //file.getId();
@@ -213,7 +235,33 @@ public class GoogleDriveStorage extends StorageCore {
     protected Object readConfig(ConfigItem configItem) {
 
 
-        return null;
+        FileList results = null;
+        JSONObject json = null;
+        try {
+            results = getDriveService().files().list()
+                    .setFields("nextPageToken, files(id, name)")
+                    .setQ("name = '" + "config.json" + "' AND '" +glavni_root+ "' in parents")
+                    .execute();
+
+            List<File> files = results.getFiles();
+
+            OutputStream outputStream = new ByteArrayOutputStream();
+            getDriveService().files().get(files.get(0).getId()).executeMediaAndDownloadTo(outputStream);
+
+            JSONParser jsonParser = new JSONParser();
+            Path tempor = Files.createTempFile("config", ".json");
+            Files.write(tempor, outputStream.toString().getBytes(StandardCharsets.UTF_8));
+            json = (JSONObject) jsonParser.parse(new FileReader(String.valueOf(tempor)));
+
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return getConfig(json, configItem);
     }
 
     @Override
@@ -234,8 +282,45 @@ public class GoogleDriveStorage extends StorageCore {
         return false;
     }
 
+    public boolean proveriuslove(String s)
+    {
+        //PROVERAVA BROJ F U ODREDJENOM D
+
+        HashMap fileCountLimits = getFileCountLimits();
+
+        int brojfajlova=searchAllFromRoot(getRoot()).size();
+
+        Long broj= (Long) fileCountLimits.get(getRoot());
+
+
+        if(broj!=null && broj<=brojfajlova)
+            return false;
+
+        //PROVERAVA BROJ F
+        int brojfilova2=searchAllFromRoot(glavni_root).size();
+        int brojfajlova1=searchAllFromRootWithoutRoot(glavni_root).size();
+        brojfajlova1=brojfajlova1+brojfilova2;
+
+        if(brojfajlova1>getMaxSizeLimit())
+            return false;
+
+        //DA LI TO IME VEC POSTOJI
+        int poslednjibrojfilova=searchByName(s).size();
+
+        if(poslednjibrojfilova!=0)
+            return false;
+
+        return true;
+    }
+
+
     @Override
     public boolean createDirectory(String s) throws FileAlreadyExistsException {
+
+
+        if(!proveriuslove(s))
+            return false;
+
         try {
 
             File fileMetadata = new File();
@@ -258,6 +343,10 @@ public class GoogleDriveStorage extends StorageCore {
 
     @Override
     public boolean createDirectory(String s, int i) throws FileAlreadyExistsException, FileCountLimitReachedException {
+
+        if(!proveriuslove(s))
+            return false;
+
         try {
             System.out.println("");
             File fileMetadata = new File();
@@ -268,12 +357,16 @@ public class GoogleDriveStorage extends StorageCore {
             File file = getDriveService().files().create(fileMetadata)
                     .setFields("id")
                     .execute();
-            System.out.println("File ID: " + file.getId());
+
+            HashMap fileCountLimits = getFileCountLimits();
+            //Brisi config.json
+            fileCountLimits.put(file.getId(), i);
+            updateFileCountLimits(fileCountLimits);
             //file.getId();
 
             // getFileCountLimits().put(file.getId(),i);
             // updateConfig();
-
+            return true;
         } catch (IOException e) {
 
             e.printStackTrace();
@@ -308,8 +401,16 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean addFile(String s) throws FileAlreadyExistsException {
 
-        try {
+        //Proverava zabranjene ekstenzije
+        List<String> niz= List.of(s.split("\\."));
+        System.out.println(niz.get(niz.size()-1));
+        if(getBannedExtensions().contains("."+niz.get(niz.size()-1)) || getBannedExtensions().contains(niz.get(niz.size()-1)))
+           return false;
 
+        if(!proveriuslove(s))
+            return false;
+
+        try {
             File fileMetadata = new File();
             List<String> nizs = List.of(s.split("\\\\"));
             fileMetadata.setName(nizs.get(nizs.size() - 1));
@@ -334,16 +435,14 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean deleteFileOrFolder(String s) throws FileNotFoundException {
 
         try {
-            System.out.println("");
-            File fileMetadata = new File();
-            fileMetadata.setName(s);
-            fileMetadata.setParents(Collections.singletonList(getRoot()));
-            fileMetadata.setMimeType("application/vnd.google-apps.folder");
+            HashMap fileCountLimits = getFileCountLimits();
+            fileCountLimits.remove(convertNameToId(s));
+            updateFileCountLimits(fileCountLimits);
+
 
             getDriveService().files().delete(convertNameToId(s))
                     .setFields("id")
                     .execute();
-
             return true;
         } catch (IOException e) {
 
@@ -407,6 +506,10 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean renameFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
 
+        int poslednjibrojfilova=searchByName(s1).size();
+
+        if(poslednjibrojfilova!=0)
+            return false;
         try {
             File file = getDriveService().files().update(convertNameToId(s), null)
                     .setFields("id, name")
@@ -581,7 +684,45 @@ public class GoogleDriveStorage extends StorageCore {
 
     @Override
     public List<PrintableFile> returnFileList(List<String> list) {
-        return null;
+
+        List<PrintableFile> printableFiles=new ArrayList<>();
+        for(String l :list)
+        {
+            String s=l.split(" ")[l.split(" ").length-1];
+            System.out.println(s);
+            FileList results = null;
+            try {
+                results = getDriveService().files().list()
+                        .setQ("'"+glavni_root+"' in parents and name ='"+s+"'")
+                        .setFields("files(id, name, size, modifiedTime, createdTime,parents,mimeType)")
+                        .execute();
+                List<File> d=results.getFiles();
+                File result= d.get(0);
+
+                String exten="";
+                if(result.getFileExtension()==null) {
+                    if (result.getName().contains(".")) {
+                        List<String> niz = List.of(result.getName().split("\\."));
+                        exten = niz.get(niz.size() - 1);
+                    }
+                }
+                else{
+                    exten=result.getFileExtension();
+                }
+
+                String s2=result.getModifiedTime().toString().split("T")[0];
+                Date dateModi=new SimpleDateFormat("yyyy-MM-dd").parse(s2);
+
+                String s1=result.getCreatedTime().toString().split("T")[0];
+                Date dateCrei=new SimpleDateFormat("yyyy-MM-dd").parse(s1);
+
+                PrintableFile pf=new PrintableFile(result.getName(),result.getId(),exten,dateCrei,dateModi);
+                printableFiles.add(pf);
+            } catch (IOException | java.text.ParseException e) {
+                e.printStackTrace();
+            }
+        }
+        return printableFiles;
     }
 
     @Override
