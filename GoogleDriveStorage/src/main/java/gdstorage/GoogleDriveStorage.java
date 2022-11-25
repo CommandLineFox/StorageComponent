@@ -99,28 +99,13 @@ public class GoogleDriveStorage extends StorageCore {
                 .build();
     }
 
+
+
+
     //Kod za pretragu
     public static void main(String[] args) throws IOException {
 
 
-        try {
-
-            File fileMetadata = new File();
-            fileMetadata.setName("jooj");
-            fileMetadata.setParents(Collections.singletonList("1amNRP4XaNWzV_Dw36tC-Mvyo42EaSqkE"));
-            fileMetadata.setMimeType("application/vnd.google-apps.folder");
-
-
-            File file = getDriveService().files().create(fileMetadata)
-                    .setFields("id")
-                    .execute();
-            // System.out.println("File ID: " + file.getId());
-            //file.getId();
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
 
     }
 
@@ -422,7 +407,15 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean renameFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
 
-
+        try {
+            File file = getDriveService().files().update(convertNameToId(s), null)
+                    .setFields("id, name")
+                    .set("name",s1)
+                    .execute();
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
         return false;
     }
 
@@ -480,7 +473,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("\tmodifiedTime > '" + date + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("modifiedTime > '" + date + "' AND '" +getRoot()+ "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -495,12 +488,53 @@ public class GoogleDriveStorage extends StorageCore {
 
     @Override
     public List<String> searchAllFromRoot(String s) {
-        return null;
+
+        FileList result = null;
+        List<String> lista = new ArrayList<>();
+        try {
+
+            result = getDriveService().files().list()
+                    .setFields("nextPageToken, files(id, name)")
+                    .setQ("'" +s+ "' in parents")
+                    .execute();
+            List<File> files = result.getFiles();
+            for (File file : files) {
+                lista.add(file.getName() + " " + file.getId());
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lista;
+
     }
+
 
     @Override
     public List<String> searchAllFromRootWithoutRoot(String s) {
-        return null;
+        FileList result = null;
+
+        List<String> lista = new ArrayList<>();
+        List<File> resenja=new ArrayList<>();
+        try {
+
+            result = getDriveService().files().list()
+                    .setQ("'" +s+ "' in parents AND mimeType = 'application/vnd.google-apps.folder'")
+                    .setFields("nextPageToken, files(id, name)")
+                    .execute();
+
+            List<File> files = result.getFiles();
+            resenja=prodjifile(files);
+
+
+            for (File file : resenja) {
+                lista.add(file.getName() + " " + file.getId());
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return lista;
     }
 
     @Override
@@ -532,7 +566,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("fullText contains '" + s + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("name contains '" + s + "' AND '" +getRoot()+ "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -582,6 +616,42 @@ public class GoogleDriveStorage extends StorageCore {
             e.printStackTrace();
         }
         return null;
+    }
+
+
+    public List<File> prodjifile( List<File> files) {
+
+        List<File> ressenja=new ArrayList<>();
+        try {
+            for (File file : files) {
+                FileList result2 = null;
+                result2 = getDriveService().files().list()
+                        .setQ("'" + file.getId() + "' in parents")
+                        .setFields("nextPageToken, files(id, name)")
+                        .execute();
+
+                List<File> tren = result2.getFiles();
+
+                for (File t : tren)
+                    ressenja.add(t);
+
+
+                FileList result3 = getDriveService().files().list()
+                        .setQ("'" + file.getId() + "' in parents AND mimeType = 'application/vnd.google-apps.folder'")
+                        .setFields("nextPageToken, files(id, name)")
+                        .execute();
+
+                List<File> tren1 = result3.getFiles();
+                List<File> tren2= prodjifile(tren1);
+                for (File t : tren2)
+                    ressenja.add(t);
+            }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return ressenja;
     }
 }
 
