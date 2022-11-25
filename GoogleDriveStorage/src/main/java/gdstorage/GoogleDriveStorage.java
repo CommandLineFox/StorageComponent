@@ -189,9 +189,7 @@ public class GoogleDriveStorage extends StorageCore {
         return false;
     }
 
-    public static void main(String[] args) {
 
-    }
     @Override
     protected void updateConfig() {
         try {
