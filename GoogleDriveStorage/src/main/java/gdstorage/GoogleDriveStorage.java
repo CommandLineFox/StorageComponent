@@ -60,7 +60,8 @@ public class GoogleDriveStorage extends StorageCore {
      */
     private static HttpTransport HTTP_TRANSPORT;
 
-    private static final String TOKENS_DIRECTORY_PATH="tokens";
+    private static final String TOKENS_DIRECTORY_PATH = "tokens";
+
     static {
         StorageManager.register(new GoogleDriveStorage());
         try {
@@ -104,10 +105,7 @@ public class GoogleDriveStorage extends StorageCore {
     }
 
 
-
     private String glavni_root;
-
-
 
 
     @Override
@@ -117,7 +115,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("name = '" + "config.json" + "' AND '" +glavni_root+ "' in parents")
+                    .setQ("name = '" + "config.json" + "' AND '" + glavni_root + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -157,7 +155,7 @@ public class GoogleDriveStorage extends StorageCore {
             for (File file : files) {
                 if (s.equals(file.getId())) {
                     setRoot(file.getId());
-                    glavni_root=file.getId();
+                    glavni_root = file.getId();
                     return true;
                 }
             }
@@ -169,7 +167,6 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean createRoot(String s) {
 
         try {
-            System.out.println("");
             File fileMetadata = new File();
             fileMetadata.setName(s);
             // fileMetadata.setParents(Collections.singletonList(getRoot()));
@@ -178,9 +175,8 @@ public class GoogleDriveStorage extends StorageCore {
             File file = getDriveService().files().create(fileMetadata)
                     .setFields("id")
                     .execute();
-            System.out.println("File ID: " + file.getId());
             setRoot(file.getId());
-            glavni_root=file.getId();
+            glavni_root = file.getId();
             return true;
         } catch (IOException e) {
 
@@ -204,9 +200,7 @@ public class GoogleDriveStorage extends StorageCore {
             FileContent mediaContent = new FileContent("application/json", tempor.toFile());
 
 
-
-            if(checkConfig(glavni_root))
-            {
+            if (checkConfig(glavni_root)) {
                 try {
 
                     getDriveService().files().delete(convertNameToId("config.json"))
@@ -221,7 +215,7 @@ public class GoogleDriveStorage extends StorageCore {
             }
 
             File file = getDriveService().files().create(fileMetadata, mediaContent).setFields("id").execute();
-            System.out.println("File ID: " + file.getId());
+
             //file.getId();
         } catch (IOException e) {
             System.err.println("ERROR IN UPGRADE CONFIG");
@@ -238,7 +232,7 @@ public class GoogleDriveStorage extends StorageCore {
         try {
             results = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("name = '" + "config.json" + "' AND '" +glavni_root+ "' in parents")
+                    .setQ("name = '" + "config.json" + "' AND '" + glavni_root + "' in parents")
                     .execute();
 
             List<File> files = results.getFiles();
@@ -250,8 +244,6 @@ public class GoogleDriveStorage extends StorageCore {
             Path tempor = Files.createTempFile("config", ".json");
             Files.write(tempor, outputStream.toString().getBytes(StandardCharsets.UTF_8));
             json = (JSONObject) jsonParser.parse(new FileReader(String.valueOf(tempor)));
-
-
 
 
         } catch (IOException e) {
@@ -280,32 +272,31 @@ public class GoogleDriveStorage extends StorageCore {
         return false;
     }
 
-    public boolean proveriuslove(String s)
-    {
+    public boolean proveriuslove(String s) {
         //PROVERAVA BROJ F U ODREDJENOM D
 
         HashMap fileCountLimits = getFileCountLimits();
 
-        int brojfajlova=searchAllFromRoot(getRoot()).size();
+        int brojfajlova = searchAllFromRoot(getRoot()).size();
 
-        Long broj= (Long) fileCountLimits.get(getRoot());
+        Long broj = (Long) fileCountLimits.get(getRoot());
 
 
-        if(broj!=null && broj<=brojfajlova)
+        if (broj != null && broj <= brojfajlova)
             return false;
 
         //PROVERAVA BROJ F
-        int brojfilova2=searchAllFromRoot(glavni_root).size();
-        int brojfajlova1=searchAllFromRootWithoutRoot(glavni_root).size();
-        brojfajlova1=brojfajlova1+brojfilova2;
+        int brojfilova2 = searchAllFromRoot(glavni_root).size();
+        int brojfajlova1 = searchAllFromRootWithoutRoot(glavni_root).size();
+        brojfajlova1 = brojfajlova1 + brojfilova2;
 
-        if(brojfajlova1>getMaxSizeLimit())
+        if (brojfajlova1 > getMaxSizeLimit())
             return false;
 
         //DA LI TO IME VEC POSTOJI
-        int poslednjibrojfilova=searchByName(s).size();
+        int poslednjibrojfilova = searchByName(s).size();
 
-        if(poslednjibrojfilova!=0)
+        if (poslednjibrojfilova != 0)
             return false;
 
         return true;
@@ -316,7 +307,7 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean createDirectory(String s) throws FileAlreadyExistsException {
 
 
-        if(!proveriuslove(s))
+        if (!proveriuslove(s))
             return false;
 
         try {
@@ -342,11 +333,11 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean createDirectory(String s, int i) throws FileAlreadyExistsException, FileCountLimitReachedException {
 
-        if(!proveriuslove(s))
+        if (!proveriuslove(s))
             return false;
 
         try {
-            System.out.println("");
+
             File fileMetadata = new File();
             fileMetadata.setName(s);
             fileMetadata.setParents(Collections.singletonList(getRoot()));
@@ -400,12 +391,12 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean addFile(String s) throws FileAlreadyExistsException {
 
         //Proverava zabranjene ekstenzije
-        List<String> niz= List.of(s.split("\\."));
-        System.out.println(niz.get(niz.size()-1));
-        if(getBannedExtensions().contains("."+niz.get(niz.size()-1)) || getBannedExtensions().contains(niz.get(niz.size()-1)))
-           return false;
+        List<String> niz = List.of(s.split("\\."));
 
-        if(!proveriuslove(s))
+        if (getBannedExtensions().contains("." + niz.get(niz.size() - 1)) || getBannedExtensions().contains(niz.get(niz.size() - 1)))
+            return false;
+
+        if (!proveriuslove(s))
             return false;
 
         try {
@@ -418,7 +409,7 @@ public class GoogleDriveStorage extends StorageCore {
             File file = getDriveService().files().create(fileMetadata, mediaContent)
                     .setFields("id")
                     .execute();
-            System.out.println("File ID: " + file.getId());
+
             //file.getId();
             return true;
 
@@ -433,6 +424,8 @@ public class GoogleDriveStorage extends StorageCore {
     public boolean deleteFileOrFolder(String s) throws FileNotFoundException {
 
         try {
+
+
             HashMap fileCountLimits = getFileCountLimits();
             fileCountLimits.remove(convertNameToId(s));
             updateFileCountLimits(fileCountLimits);
@@ -473,7 +466,7 @@ public class GoogleDriveStorage extends StorageCore {
                     .setRemoveParents(previousParents.toString())
                     .setFields("id, parents")
                     .execute();
-            System.out.println("Move successfully made.");
+            return true;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -489,7 +482,7 @@ public class GoogleDriveStorage extends StorageCore {
             OutputStream outputStream = new ByteArrayOutputStream();
 
             getDriveService().files().get(convertNameToId(s)).executeMediaAndDownloadTo(outputStream);
-            java.io.File f = new java.io.File(s1+"\\"+s);
+            java.io.File f = new java.io.File(s1 + "\\" + s);
             FileWriter fileWriter = new FileWriter(f.getPath());
             fileWriter.write(String.valueOf(outputStream));
             fileWriter.close();
@@ -504,17 +497,18 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public boolean renameFileOrDirectory(String s, String s1) throws FileNotFoundException, FileAlreadyExistsException {
 
-        int poslednjibrojfilova=searchByName(s1).size();
+        int poslednjibrojfilova = searchByName(s1).size();
 
-        if(poslednjibrojfilova!=0)
+        if (poslednjibrojfilova != 0)
             return false;
         try {
             File file = getDriveService().files().update(convertNameToId(s), null)
                     .setFields("id, name")
-                    .set("name",s1)
+                    .set("name", s1)
                     .execute();
-        }catch (Exception e)
-        {
+
+            return true;
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -528,7 +522,7 @@ public class GoogleDriveStorage extends StorageCore {
         try {
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("name = '" + s + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("name = '" + s + "' AND '" + getRoot() + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -550,7 +544,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("fullText contains '" + s + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("fullText contains '" + s + "' AND '" + getRoot() + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -574,7 +568,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("modifiedTime > '" + date + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("modifiedTime > '" + date + "' AND '" + getRoot() + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -596,7 +590,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("'" +s+ "' in parents")
+                    .setQ("'" + s + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -616,16 +610,16 @@ public class GoogleDriveStorage extends StorageCore {
         FileList result = null;
 
         List<String> lista = new ArrayList<>();
-        List<File> resenja=new ArrayList<>();
+        List<File> resenja = new ArrayList<>();
         try {
 
             result = getDriveService().files().list()
-                    .setQ("'" +s+ "' in parents AND mimeType = 'application/vnd.google-apps.folder'")
+                    .setQ("'" + s + "' in parents AND mimeType = 'application/vnd.google-apps.folder'")
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
 
             List<File> files = result.getFiles();
-            resenja=prodjifile(files);
+            resenja = prodjifile(files);
 
 
             for (File file : resenja) {
@@ -645,7 +639,7 @@ public class GoogleDriveStorage extends StorageCore {
         try {
 
             result = getDriveService().files().list()
-                    .setQ("'" +getRoot()+ "' in parents")
+                    .setQ("'" + getRoot() + "' in parents")
                     .setFields("nextPageToken, files(id, name)")
                     .execute();
             List<File> files = result.getFiles();
@@ -667,7 +661,7 @@ public class GoogleDriveStorage extends StorageCore {
 
             result = getDriveService().files().list()
                     .setFields("nextPageToken, files(id, name)")
-                    .setQ("name contains '" + s + "' AND '" +getRoot()+ "' in parents")
+                    .setQ("name contains '" + s + "' AND '" + getRoot() + "' in parents")
                     .execute();
             List<File> files = result.getFiles();
             for (File file : files) {
@@ -683,41 +677,45 @@ public class GoogleDriveStorage extends StorageCore {
     @Override
     public List<PrintableFile> returnFileList(List<String> list) {
 
-        List<PrintableFile> printableFiles=new ArrayList<>();
-        for(String l :list)
-        {
-            String s=l.split(" ")[l.split(" ").length-1];
-            System.out.println(s);
+        List<PrintableFile> printableFiles = new ArrayList<>();
+
+        for (String l : list) {
+
+            String s = l.split(" ")[l.split(" ").length - 1];
+
             FileList results = null;
             try {
+
+                File novi=getDriveService().files().get(s).execute();
                 results = getDriveService().files().list()
-                        .setQ("'"+glavni_root+"' in parents and name ='"+s+"'")
+                        .setQ("name ='" + novi.getName() + "'")
                         .setFields("files(id, name, size, modifiedTime, createdTime,parents,mimeType)")
                         .execute();
-                List<File> d=results.getFiles();
-                File result= d.get(0);
+                List<File> d = results.getFiles();
+                File result = d.get(0);
 
-                String exten="";
-                if(result.getFileExtension()==null) {
+                String exten = "";
+                if (result.getFileExtension() == null) {
                     if (result.getName().contains(".")) {
                         List<String> niz = List.of(result.getName().split("\\."));
                         exten = niz.get(niz.size() - 1);
                     }
+                } else {
+                    exten = result.getFileExtension();
                 }
-                else{
-                    exten=result.getFileExtension();
-                }
 
-                String s2=result.getModifiedTime().toString().split("T")[0];
-                Date dateModi=new SimpleDateFormat("yyyy-MM-dd").parse(s2);
+                String s2 = result.getModifiedTime().toString().split("T")[0];
+                Date dateModi = new SimpleDateFormat("yyyy-MM-dd").parse(s2);
 
-                String s1=result.getCreatedTime().toString().split("T")[0];
-                Date dateCrei=new SimpleDateFormat("yyyy-MM-dd").parse(s1);
+                String s1 = result.getCreatedTime().toString().split("T")[0];
+                Date dateCrei = new SimpleDateFormat("yyyy-MM-dd").parse(s1);
 
-                PrintableFile pf=new PrintableFile(result.getName(),result.getId(),exten,dateCrei,dateModi);
+
+                PrintableFile pf = new PrintableFile(result.getName(), result.getId(), exten, dateCrei, dateModi);
                 printableFiles.add(pf);
             } catch (IOException | java.text.ParseException e) {
                 e.printStackTrace();
+
             }
         }
         return printableFiles;
@@ -758,9 +756,9 @@ public class GoogleDriveStorage extends StorageCore {
     }
 
 
-    public List<File> prodjifile( List<File> files) {
+    public List<File> prodjifile(List<File> files) {
 
-        List<File> ressenja=new ArrayList<>();
+        List<File> ressenja = new ArrayList<>();
         try {
             for (File file : files) {
                 FileList result2 = null;
@@ -781,7 +779,7 @@ public class GoogleDriveStorage extends StorageCore {
                         .execute();
 
                 List<File> tren1 = result3.getFiles();
-                List<File> tren2= prodjifile(tren1);
+                List<File> tren2 = prodjifile(tren1);
                 for (File t : tren2)
                     ressenja.add(t);
             }

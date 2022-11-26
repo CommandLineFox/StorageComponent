@@ -427,7 +427,6 @@ public class Main {
                                             }
                                         }
 
-                                        System.out.println("aloha");
                                         result = storage.sortResults(result, sortType, orderType);
                                         task = true;
                                     }
