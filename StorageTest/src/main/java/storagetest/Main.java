@@ -492,7 +492,7 @@ public class Main {
                         }
 
                         for (String found : result) {
-                           System.out.println(found);
+                            System.out.println(found);
                         }
                     }
                     case "help" -> {
@@ -506,7 +506,6 @@ public class Main {
                         System.out.println("rename <name> <new name> - Renames a file or directory");
                         System.out.println("download <file name> <path> - Download a file or directory");
                         System.out.println("search                   - Displays a menu for searching through the storage");
-
                     }
                     default -> System.out.println("Invalid command, please see \"help\" for a list of valid commands");
                 }
